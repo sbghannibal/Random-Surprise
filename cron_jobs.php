@@ -82,6 +82,7 @@ foreach ($eventsToDraw as $event) {
             $nameLookup[(int)$participant['id']] = (string)$participant['name'];
         }
 
+        $pendingEmails = [];
         foreach ($participants as $participant) {
             $giverId = (int)$participant['id'];
             $receiverId = $assignmentMap[$giverId] ?? 0;
@@ -89,10 +90,17 @@ foreach ($eventsToDraw as $event) {
             $link = absoluteUrl(sprintf('gift_list.php?token=%s', urlencode((string)$participant['token'])));
 
             $body = "Hoi {$participant['name']},\n\nVoor event '{$event['name']}' heb jij getrokken: {$receiverName}.\nBekijk het lijstje via: {$link}";
-            sendMailSafe((string)$participant['email'], 'Secret Santa trekking uitgevoerd', $body);
+            $pendingEmails[] = [
+                'to' => (string)$participant['email'],
+                'subject' => 'Secret Santa trekking uitgevoerd',
+                'body' => $body,
+            ];
         }
 
         $pdo->commit();
+        foreach ($pendingEmails as $email) {
+            sendMailSafe($email['to'], $email['subject'], $email['body']);
+        }
         $drawCount++;
     } catch (Throwable $e) {
         if ($pdo->inTransaction()) {

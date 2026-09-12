@@ -46,12 +46,6 @@ function baseUrl(): string
     if ($configured) {
         return rtrim($configured, '/');
     }
-
-    if (!empty($_SERVER['HTTP_HOST'])) {
-        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        return $scheme . '://' . $_SERVER['HTTP_HOST'];
-    }
-
     return 'http://localhost';
 }
 

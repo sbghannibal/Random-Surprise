@@ -30,6 +30,7 @@ $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string)($_POST['action'] ?? '');
+    $shouldRedirect = false;
 
     if ($action === 'add_gift') {
         $description = trim((string)($_POST['description'] ?? ''));
@@ -44,6 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($errors === []) {
                 $insert = $pdo->prepare('INSERT INTO gift_ideas (participant_id, description, shop_url) VALUES (?, ?, ?)');
                 $insert->execute([$participantId, $description, $shopUrl !== '' ? $shopUrl : null]);
+                $shouldRedirect = true;
             }
         }
     }
@@ -52,6 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $giftId = (int)($_POST['gift_id'] ?? 0);
         $delete = $pdo->prepare('DELETE FROM gift_ideas WHERE id = ? AND participant_id = ?');
         $delete->execute([$giftId, $participantId]);
+        $shouldRedirect = true;
     }
 
     if ($action === 'toggle_reservation' && $me['event_type'] === 'birthday') {
@@ -64,6 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                  WHERE id = ? AND participant_id = ? AND (bought_by_participant_id IS NULL OR bought_by_participant_id = ?)'
             );
             $toggle->execute([$participantId, $participantId, $giftId, $giftOwnerId, $participantId]);
+            $shouldRedirect = true;
         }
     }
 
@@ -96,6 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'INSERT INTO anonymous_questions (gift_idea_id, asker_participant_id, question) VALUES (?, ?, ?)'
                 );
                 $insertQuestion->execute([$giftId, $participantId, $question]);
+                $shouldRedirect = true;
             }
         }
     }
@@ -111,11 +116,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                  WHERE aq.id = ? AND g.participant_id = ?'
             );
             $answerStmt->execute([$answer, $questionId, $participantId]);
+            $shouldRedirect = true;
         }
     }
 
-    header('Location: gift_list.php?token=' . urlencode($token));
-    exit;
+    if ($shouldRedirect) {
+        header('Location: gift_list.php?token=' . urlencode($token));
+        exit;
+    }
 }
 
 $myGiftsStmt = $pdo->prepare('SELECT id, description, shop_url FROM gift_ideas WHERE participant_id = ? ORDER BY id DESC');
