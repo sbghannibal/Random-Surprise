@@ -227,11 +227,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $canAnswerStmt->execute([$activeQuestionId, $participantId]);
                         if ($canAnswerStmt->fetchColumn()) {
                             $answerStmt = $pdo->prepare('UPDATE anonymous_questions SET answer = ? WHERE id = ? AND answer IS NULL');
-                            $answerStmt->execute([$answer, $activeQuestionId]);
-                            if ($answerStmt->rowCount() > 0) {
+                            if ($answerStmt->execute([$answer, $activeQuestionId])) {
                                 $shouldRedirect = true;
-                            } else {
-                                addFormError($errors, $fieldErrors, null, 'Dit antwoord kon niet meer worden opgeslagen omdat de vraag al is bijgewerkt.');
                             }
                         } else {
                             addFormError($errors, $fieldErrors, null, 'Deze vraag kan niet meer worden beantwoord.');
