@@ -238,8 +238,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <hr class="my-4">
-                <div id="<?= h(fieldErrorId('participants')) ?>" tabindex="-1">
-                <h2 class="h5">Deelnemers</h2>
+                <div>
+                <h2 class="h5" id="<?= h(fieldErrorId('participants')) ?>" tabindex="-1">Deelnemers</h2>
                 <div id="participants">
                     <?php
                     $oldNames = $old['participant_name'];

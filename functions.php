@@ -63,7 +63,7 @@ function fieldErrorClass(array $fieldErrors, string $field, string $baseClass = 
 
 function fieldErrorId(string $field): string
 {
-    return 'field-' . preg_replace('/[^a-zA-Z0-9_-]+/', '-', $field);
+    return 'field-' . str_replace('%', '-', rawurlencode($field));
 }
 
 function renderErrorSummary(
@@ -112,7 +112,6 @@ function renderErrorSummary(
     }
 
     echo '</div>';
-    echo '<script>(function () { const summary = document.getElementById("' . h($summaryId) . '"); if (summary) { summary.scrollIntoView({ behavior: "smooth", block: "start" }); summary.focus(); } }());</script>';
 }
 
 function logApplicationError(string $context, \Throwable $e): void
