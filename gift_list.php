@@ -102,13 +102,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     addFormError($errors, $fieldErrors, null, 'Kies een geldig cadeau-idee om te verwijderen.');
                 } else {
                     try {
-                        $ownedGiftStmt = $pdo->prepare('SELECT 1 FROM gift_ideas WHERE id = ? AND participant_id = ? LIMIT 1');
-                        $ownedGiftStmt->execute([$activeGiftId, $participantId]);
-                        if (!$ownedGiftStmt->fetchColumn()) {
-                            addFormError($errors, $fieldErrors, null, 'Dit cadeau-idee kon niet worden verwijderd.');
-                            break;
-                        }
-
                         $delete = $pdo->prepare('DELETE FROM gift_ideas WHERE id = ? AND participant_id = ?');
                         $delete->execute([$activeGiftId, $participantId]);
                         if ($delete->rowCount() > 0) {

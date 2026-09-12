@@ -22,6 +22,7 @@ DB_PASS=
 POST-formulieren volgen hetzelfde patroon:
 - valideer server-side en verzamel concrete foutmeldingen per veld;
 - toon bovenaan een samenvatting via `renderErrorSummary()`;
+- geef velden en foutdoelen een stabiel id via `fieldErrorId()` zodat de samenvatting naar het juiste veld kan linken;
 - markeer individuele velden met `fieldErrorClass()` en `firstFieldError()`;
 - log technische details server-side met `logApplicationError()`, maar toon gebruikers alleen veilige meldingen.
 

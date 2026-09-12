@@ -202,7 +202,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="card-body p-4">
             <h1 class="h4 mb-3">Maak een evenement aan</h1>
 
-            <?php renderErrorSummary($errors, $fieldErrors, 'Opslaan mislukt. Controleer de gemarkeerde velden.', 'index-error-summary'); ?>
+            <?php renderErrorSummary(
+                $errors,
+                $fieldErrors,
+                'Opslaan mislukt. Controleer de gemarkeerde velden.',
+                'index-error-summary',
+                ['participants' => fieldErrorId('participant_name_0')]
+            ); ?>
 
             <form method="post" novalidate>
                 <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">

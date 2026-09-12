@@ -3,6 +3,11 @@
 declare(strict_types=1);
 
 if (!function_exists('loadEnvFile')) {
+    function envHas(string $name): bool
+    {
+        return getenv($name) !== false || array_key_exists($name, $_ENV) || array_key_exists($name, $_SERVER);
+    }
+
     function loadEnvFile(string $path): void
     {
         static $loaded = [];
@@ -30,7 +35,7 @@ if (!function_exists('loadEnvFile')) {
 
             [$name, $value] = explode('=', $trimmedLine, 2);
             $name = trim($name);
-            if ($name === '' || getenv($name) !== false) {
+            if ($name === '' || envHas($name)) {
                 continue;
             }
 
@@ -54,7 +59,17 @@ if (!function_exists('env')) {
     function env(string $name, ?string $default = null): ?string
     {
         $value = getenv($name);
-        return $value === false ? $default : $value;
+        if ($value !== false) {
+            return $value;
+        }
+        if (array_key_exists($name, $_ENV)) {
+            return (string)$_ENV[$name];
+        }
+        if (array_key_exists($name, $_SERVER)) {
+            return (string)$_SERVER[$name];
+        }
+
+        return $default;
     }
 }
 

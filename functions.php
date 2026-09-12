@@ -72,7 +72,8 @@ function renderErrorSummary(
     array $errors,
     array $fieldErrors = [],
     string $title = 'Opslaan mislukt. Controleer de gemarkeerde velden.',
-    string $summaryId = 'form-error-summary'
+    string $summaryId = 'form-error-summary',
+    array $fieldTargets = []
 ): void
 {
     if ($errors === []) {
@@ -83,7 +84,8 @@ function renderErrorSummary(
     foreach ($fieldErrors as $field => $messages) {
         foreach ($messages as $message) {
             if (!isset($errorLinks[$message])) {
-                $errorLinks[$message] = '#' . fieldErrorId((string)$field);
+                $targetId = $fieldTargets[(string)$field] ?? fieldErrorId((string)$field);
+                $errorLinks[$message] = '#' . $targetId;
             }
         }
     }
