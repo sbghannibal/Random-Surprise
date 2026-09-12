@@ -124,8 +124,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($pdo->inTransaction()) {
                         $pdo->rollBack();
                     }
-                    if ($e->getCode() === '23000') {
+                    $constraintDetails = (string)($e->errorInfo[2] ?? '');
+                    if ($e->getCode() === '23000' && str_contains($constraintDetails, 'uniq_event_email')) {
                         $errors[] = 'Dubbele deelnemer-e-mail gevonden. Gebruik unieke e-mailadressen per event.';
+                    } elseif ($e->getCode() === '23000') {
+                        $errors[] = 'Opslaan mislukt door een gegevensconflict. Probeer opnieuw.';
                     } else {
                         $errors[] = 'Opslaan mislukt. Probeer opnieuw.';
                     }

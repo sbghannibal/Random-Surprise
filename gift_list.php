@@ -201,7 +201,7 @@ if ($me['event_type'] === 'birthday') {
     $othersStmt = $pdo->prepare(
         'SELECT p.id AS participant_id, p.name, g.id AS gift_id, g.description, g.shop_url, g.bought_by_participant_id
          FROM participants p
-         JOIN gift_ideas g ON g.participant_id = p.id
+         LEFT JOIN gift_ideas g ON g.participant_id = p.id
          WHERE p.event_id = ? AND p.id <> ?
          ORDER BY p.name, g.id'
     );
@@ -324,12 +324,13 @@ if ($me['event_type'] === 'secret_santa' && $canSeeMatch) {
                         <?php
                         $currentOwner = null;
                         foreach ($others as $row):
-                            if ($row['gift_id'] === null):
-                                continue;
-                            endif;
                             if ($currentOwner !== $row['participant_id']):
                                 $currentOwner = $row['participant_id'];
                                 echo '<hr><h3 class="h6 mb-2">' . h((string)$row['name']) . '</h3>';
+                            endif;
+                            if ($row['gift_id'] === null):
+                                echo '<p class="text-muted small">Nog geen ideeën toegevoegd.</p>';
+                                continue;
                             endif;
                         ?>
                             <div class="border rounded p-3 mb-2">
@@ -341,8 +342,9 @@ if ($me['event_type'] === 'secret_santa' && $canSeeMatch) {
                                     <input type="hidden" name="action" value="toggle_reservation">
                                     <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                                     <input type="hidden" name="gift_id" value="<?= (int)$row['gift_id'] ?>">
-                                    <button class="btn btn-sm <?= ((int)$row['bought_by_participant_id'] === $participantId) ? 'btn-success' : 'btn-outline-success' ?>">
-                                        <?= ((int)$row['bought_by_participant_id'] === $participantId) ? 'Reservatie annuleren' : 'Ik koop dit' ?>
+                                    <?php $reservedByOther = ((int)$row['bought_by_participant_id'] > 0 && (int)$row['bought_by_participant_id'] !== $participantId); ?>
+                                    <button class="btn btn-sm <?= ((int)$row['bought_by_participant_id'] === $participantId) ? 'btn-success' : 'btn-outline-success' ?>" <?= $reservedByOther ? 'disabled' : '' ?>>
+                                        <?= $reservedByOther ? 'Reeds gereserveerd' : ((((int)$row['bought_by_participant_id'] === $participantId) ? 'Reservatie annuleren' : 'Ik koop dit')) ?>
                                     </button>
                                 </form>
                                 <form method="post" class="mt-2">
