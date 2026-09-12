@@ -18,15 +18,15 @@ if ($token !== '') {
     $event = $stmt->fetch();
     if ($event) {
         session_regenerate_id(true);
-        $_SESSION['organizer_event_id'] = (int)$event['id'];
+        $_SESSION['organizer_token'] = $token;
         header('Location: organizer.php');
         exit;
     }
 }
 
-if ($event === null && isset($_SESSION['organizer_event_id'])) {
-    $stmt = $pdo->prepare('SELECT * FROM events WHERE id = ? LIMIT 1');
-    $stmt->execute([(int)$_SESSION['organizer_event_id']]);
+if ($event === null && isset($_SESSION['organizer_token'])) {
+    $stmt = $pdo->prepare('SELECT * FROM events WHERE token = ? LIMIT 1');
+    $stmt->execute([(string)$_SESSION['organizer_token']]);
     $event = $stmt->fetch();
 }
 

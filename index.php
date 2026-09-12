@@ -53,6 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $participants = [];
+    $seenEmails = [];
     foreach ($participantNames as $index => $participantName) {
         $pName = trim((string)$participantName);
         $pEmail = trim((string)($participantEmails[$index] ?? ''));
@@ -68,6 +69,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Ongeldig e-mailadres voor deelnemer: ' . h($pName);
             continue;
         }
+        $emailKey = strtolower($pEmail);
+        if (isset($seenEmails[$emailKey])) {
+            $errors[] = 'Dubbel e-mailadres gevonden: ' . h($pEmail);
+            continue;
+        }
+        $seenEmails[$emailKey] = true;
 
         $participants[] = ['name' => $pName, 'email' => $pEmail];
     }

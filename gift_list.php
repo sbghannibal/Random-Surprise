@@ -8,6 +8,18 @@ require __DIR__ . '/db.php';
 require __DIR__ . '/functions.php';
 
 $token = (string)($_GET['token'] ?? '');
+if ($token !== '') {
+    session_regenerate_id(true);
+    $_SESSION['participant_token'] = $token;
+    header('Location: gift_list.php');
+    exit;
+}
+
+$sessionToken = (string)($_SESSION['participant_token'] ?? '');
+if ($sessionToken === '') {
+    http_response_code(403);
+    exit('Geen toegang. Open eerst je geldige deelnemer-link.');
+}
 
 $stmt = $pdo->prepare(
     'SELECT p.*, e.name AS event_name, e.event_type, e.event_date, e.draw_date, e.budget, e.id AS event_id
@@ -16,7 +28,7 @@ $stmt = $pdo->prepare(
      WHERE p.token = ?
      LIMIT 1'
 );
-$stmt->execute([$token]);
+$stmt->execute([$sessionToken]);
 $me = $stmt->fetch();
 
 if (!$me) {
@@ -155,7 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($shouldRedirect) {
-        header('Location: gift_list.php?token=' . urlencode($token));
+        header('Location: gift_list.php');
         exit;
     }
 }
