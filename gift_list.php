@@ -9,10 +9,16 @@ require __DIR__ . '/functions.php';
 
 $token = (string)($_GET['token'] ?? '');
 if ($token !== '') {
-    session_regenerate_id(true);
-    $_SESSION['participant_token'] = $token;
-    header('Location: gift_list.php');
-    exit;
+    $tokenCheckStmt = $pdo->prepare('SELECT 1 FROM participants WHERE token = ? LIMIT 1');
+    $tokenCheckStmt->execute([$token]);
+    if ($tokenCheckStmt->fetchColumn()) {
+        session_regenerate_id(true);
+        $_SESSION['participant_token'] = $token;
+        header('Location: gift_list.php');
+        exit;
+    }
+    http_response_code(404);
+    exit('Deelnemer niet gevonden.');
 }
 
 $sessionToken = (string)($_SESSION['participant_token'] ?? '');

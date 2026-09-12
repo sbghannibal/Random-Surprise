@@ -31,8 +31,7 @@ function createDerangement(array $ids): array
         }
     }
 
-    shuffle($candidate);
-    return array_merge(array_slice($candidate, 1), array_slice($candidate, 0, 1));
+    return array_merge(array_slice($original, 1), array_slice($original, 0, 1));
 }
 
 $today = (new DateTimeImmutable('today'))->format('Y-m-d');

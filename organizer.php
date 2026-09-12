@@ -10,12 +10,15 @@ require __DIR__ . '/functions.php';
 $token = (string)($_GET['token'] ?? '');
 $message = null;
 $error = null;
+$findEventByToken = static function (PDO $pdo, string $eventToken): array|false {
+    $stmt = $pdo->prepare('SELECT * FROM events WHERE token = ? LIMIT 1');
+    $stmt->execute([$eventToken]);
+    return $stmt->fetch();
+};
 
 $event = null;
 if ($token !== '') {
-    $stmt = $pdo->prepare('SELECT * FROM events WHERE token = ? LIMIT 1');
-    $stmt->execute([$token]);
-    $event = $stmt->fetch();
+    $event = $findEventByToken($pdo, $token);
     if ($event) {
         session_regenerate_id(true);
         $_SESSION['organizer_token'] = $token;
@@ -25,9 +28,7 @@ if ($token !== '') {
 }
 
 if ($event === null && isset($_SESSION['organizer_token'])) {
-    $stmt = $pdo->prepare('SELECT * FROM events WHERE token = ? LIMIT 1');
-    $stmt->execute([(string)$_SESSION['organizer_token']]);
-    $event = $stmt->fetch();
+    $event = $findEventByToken($pdo, (string)$_SESSION['organizer_token']);
 }
 
 if ($event === null) {
