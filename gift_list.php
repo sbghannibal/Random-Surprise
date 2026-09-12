@@ -238,20 +238,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             if ($answerStmt->rowCount() > 0) {
                                 $shouldRedirect = true;
                             } else {
-                                $currentAnswerStmt = $pdo->prepare(
-                                    'SELECT aq.answer
-                                     FROM anonymous_questions aq
-                                     JOIN gift_ideas g ON g.id = aq.gift_idea_id
-                                     WHERE aq.id = ? AND g.participant_id = ?
-                                     LIMIT 1'
-                                );
-                                $currentAnswerStmt->execute([$activeQuestionId, $participantId]);
-                                $currentAnswer = $currentAnswerStmt->fetchColumn();
-                                if ($currentAnswer !== false && $currentAnswer !== null && (string)$currentAnswer === $answer) {
-                                    $shouldRedirect = true;
-                                } else {
-                                    addFormError($errors, $fieldErrors, null, 'Deze vraag kan niet meer worden beantwoord.');
-                                }
+                                addFormError($errors, $fieldErrors, null, 'Deze vraag kan niet meer worden beantwoord.');
                             }
                         } else {
                             addFormError($errors, $fieldErrors, null, 'Deze vraag kan niet meer worden beantwoord.');
