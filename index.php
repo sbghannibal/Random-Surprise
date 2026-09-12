@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $participants = [];
         $seenEmails = [];
-        $enteredParticipantRows = 0;
+        $hasParticipantFieldErrors = false;
         foreach ($participantNames as $index => $participantName) {
             $pName = trim((string)$participantName);
             $pEmail = trim((string)($participantEmails[$index] ?? ''));
@@ -90,21 +90,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 continue;
             }
 
-            $enteredParticipantRows++;
-
             if ($pName === '') {
+                $hasParticipantFieldErrors = true;
                 addFormError($errors, $fieldErrors, 'participant_name_' . $index, 'Naam van deelnemer ' . ($index + 1) . ' is verplicht.');
             }
             if ($pEmail === '') {
+                $hasParticipantFieldErrors = true;
                 addFormError($errors, $fieldErrors, 'participant_email_' . $index, 'E-mailadres van deelnemer ' . ($index + 1) . ' is verplicht.');
                 continue;
             }
             if (!isValidEmail($pEmail)) {
+                $hasParticipantFieldErrors = true;
                 addFormError($errors, $fieldErrors, 'participant_email_' . $index, 'Vul een geldig e-mailadres in voor deelnemer ' . ($index + 1) . '.');
                 continue;
             }
             $emailKey = strtolower($pEmail);
             if (isset($seenEmails[$emailKey])) {
+                $hasParticipantFieldErrors = true;
                 addFormError($errors, $fieldErrors, 'participant_email_' . $index, 'Dit e-mailadres is al ingevuld voor een andere deelnemer.');
                 continue;
             }
@@ -115,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        if ($enteredParticipantRows < 2) {
+        if (count($participants) < 2 && !$hasParticipantFieldErrors) {
             addFormError($errors, $fieldErrors, 'participants', 'Voeg minstens 2 deelnemers met naam en e-mailadres toe.');
         }
 
