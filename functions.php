@@ -85,7 +85,7 @@ function renderErrorSummary(array $errors, string $title = 'Opslaan mislukt. Con
     echo '</div>';
 }
 
-function logApplicationError(string $context, Throwable $e): void
+function logApplicationError(string $context, \Throwable $e): void
 {
     error_log(sprintf('%s: [%s] %s', $context, get_class($e), $e->getMessage()));
 }
