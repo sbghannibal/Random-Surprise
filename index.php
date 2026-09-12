@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($eventType === 'secret_santa') {
                 if (!isValidDate($drawDate)) {
                     $errors[] = 'Koppel-datum is verplicht voor Secret Santa.';
-                } else {
+                } elseif (isValidDate($eventDate)) {
                     $drawDateObj = new DateTimeImmutable($drawDate);
                     $eventDateObj = new DateTimeImmutable($eventDate);
                     if ($drawDateObj > $eventDateObj) {

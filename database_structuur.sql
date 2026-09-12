@@ -19,12 +19,13 @@ CREATE TABLE IF NOT EXISTS `participants` (
     `event_id` INT NOT NULL,
     `token` VARCHAR(64) NOT NULL UNIQUE,
     `name` VARCHAR(255) NOT NULL,
-    `email` VARCHAR(255) NOT NULL,
+    `email` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+    `email_normalized` VARCHAR(255) AS (LOWER(`email`)) STORED,
     `matched_participant_id` INT NULL,
     FOREIGN KEY (`event_id`) REFERENCES `events`(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`matched_participant_id`) REFERENCES `participants`(`id`) ON DELETE SET NULL,
     INDEX (`token`),
-    UNIQUE KEY `uniq_event_email` (`event_id`, `email`)
+    UNIQUE KEY `uniq_event_email` (`event_id`, `email_normalized`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS `gift_ideas` (
