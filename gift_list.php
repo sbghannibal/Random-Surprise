@@ -49,6 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 if ($shopUrl !== '' && filter_var($shopUrl, FILTER_VALIDATE_URL) === false) {
                     $errors[] = 'Webshop link is ongeldig.';
+                } elseif ($shopUrl !== '' && !in_array((string)parse_url($shopUrl, PHP_URL_SCHEME), ['http', 'https'], true)) {
+                    $errors[] = 'Webshop link moet met http:// of https:// beginnen.';
                 }
                 if ($errors === []) {
                     $insert = $pdo->prepare('INSERT INTO gift_ideas (participant_id, description, shop_url) VALUES (?, ?, ?)');

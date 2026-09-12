@@ -8,7 +8,6 @@ require __DIR__ . '/db.php';
 require __DIR__ . '/functions.php';
 
 $errors = [];
-$successUrl = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isValidCsrfToken($_POST['csrf_token'] ?? null)) {
@@ -109,7 +108,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $pdo->commit();
-            $successUrl = 'organizer.php?token=' . urlencode($organizerToken);
+            header('Location: organizer.php?token=' . urlencode($organizerToken));
+            exit;
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
@@ -141,13 +141,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="card shadow-sm">
         <div class="card-body p-4">
             <h1 class="h4 mb-3">Maak een evenement aan</h1>
-
-            <?php if ($successUrl !== null): ?>
-                <div class="alert alert-success">
-                    Evenement aangemaakt. Organisator-link:
-                    <a href="<?= h($successUrl) ?>"><?= h($successUrl) ?></a>
-                </div>
-            <?php endif; ?>
 
             <?php foreach ($errors as $error): ?>
                 <div class="alert alert-danger"><?= h($error) ?></div>

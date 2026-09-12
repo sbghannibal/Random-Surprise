@@ -52,6 +52,11 @@ function baseUrl(): string
         throw new RuntimeException('APP_BASE_URL is invalid.');
     }
 
+    $parts = parse_url((string)$validated);
+    if (($parts['scheme'] ?? '') !== 'https') {
+        throw new RuntimeException('APP_BASE_URL must use https.');
+    }
+
     return rtrim((string)$validated, '/');
 }
 

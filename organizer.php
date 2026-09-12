@@ -11,13 +11,27 @@ $token = (string)($_GET['token'] ?? '');
 $message = null;
 $error = null;
 
-$stmt = $pdo->prepare('SELECT * FROM events WHERE token = ? LIMIT 1');
-$stmt->execute([$token]);
-$event = $stmt->fetch();
+$event = null;
+if ($token !== '') {
+    $stmt = $pdo->prepare('SELECT * FROM events WHERE token = ? LIMIT 1');
+    $stmt->execute([$token]);
+    $event = $stmt->fetch();
+    if ($event) {
+        $_SESSION['organizer_event_id'] = (int)$event['id'];
+        header('Location: organizer.php');
+        exit;
+    }
+}
 
-if (!$event) {
-    http_response_code(404);
-    exit('Evenement niet gevonden.');
+if ($event === null && isset($_SESSION['organizer_event_id'])) {
+    $stmt = $pdo->prepare('SELECT * FROM events WHERE id = ? LIMIT 1');
+    $stmt->execute([(int)$_SESSION['organizer_event_id']]);
+    $event = $stmt->fetch();
+}
+
+if ($event === null) {
+    http_response_code(403);
+    exit('Geen toegang. Open eerst de geldige organisator-link.');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_reminder'])) {
