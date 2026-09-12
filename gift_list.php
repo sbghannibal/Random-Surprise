@@ -168,6 +168,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $errors[] = 'Dit antwoord kon niet worden opgeslagen.';
                 }
+            } else {
+                $errors[] = 'Vul een antwoord in.';
             }
         }
     }

@@ -31,7 +31,7 @@ if ($event === null && isset($_SESSION['organizer_token'])) {
     $event = $findEventByToken($pdo, (string)$_SESSION['organizer_token']);
 }
 
-if ($event === null) {
+if (!$event) {
     http_response_code(403);
     exit('Geen toegang. Open eerst de geldige organisator-link.');
 }

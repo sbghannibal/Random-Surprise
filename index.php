@@ -12,120 +12,130 @@ $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isValidCsrfToken($_POST['csrf_token'] ?? null)) {
         $errors[] = 'Ongeldige aanvraag. Herlaad de pagina en probeer opnieuw.';
-    }
-
-    $name = trim((string)($_POST['name'] ?? ''));
-    $eventType = (string)($_POST['event_type'] ?? 'birthday');
-    $eventDate = (string)($_POST['event_date'] ?? '');
-    $drawDate = (string)($_POST['draw_date'] ?? '');
-    $budgetRaw = trim((string)($_POST['budget'] ?? ''));
-
-    $participantNames = $_POST['participant_name'] ?? [];
-    $participantEmails = $_POST['participant_email'] ?? [];
-
-    if ($name === '') {
-        $errors[] = 'Naam van het evenement is verplicht.';
-    }
-    if (!in_array($eventType, ['birthday', 'secret_santa'], true)) {
-        $errors[] = 'Ongeldig evenementtype.';
-    }
-    if (!isValidDate($eventDate)) {
-        $errors[] = 'Datum evenement is ongeldig.';
-    }
-
-    if ($eventType === 'secret_santa') {
-        if (!isValidDate($drawDate)) {
-            $errors[] = 'Koppel-datum is verplicht voor Secret Santa.';
-        } else {
-            $drawDateObj = new DateTimeImmutable($drawDate);
-            $eventDateObj = new DateTimeImmutable($eventDate);
-            if ($drawDateObj > $eventDateObj) {
-                $errors[] = 'Koppel-datum mag niet na de evenementdatum liggen.';
-            }
-        }
     } else {
-        $drawDate = null;
-    }
+        $name = trim((string)($_POST['name'] ?? ''));
+        $eventType = (string)($_POST['event_type'] ?? 'birthday');
+        $eventDate = (string)($_POST['event_date'] ?? '');
+        $drawDate = (string)($_POST['draw_date'] ?? '');
+        $budgetRaw = trim((string)($_POST['budget'] ?? ''));
 
-    $budget = null;
-    if ($budgetRaw !== '') {
-        if (!is_numeric($budgetRaw) || (float)$budgetRaw < 0) {
-            $errors[] = 'Budget moet een niet-negatief getal zijn.';
+        $participantNames = $_POST['participant_name'] ?? [];
+        $participantEmails = $_POST['participant_email'] ?? [];
+
+        if ($name === '') {
+            $errors[] = 'Naam van het evenement is verplicht.';
         } else {
-            $budget = number_format((float)$budgetRaw, 2, '.', '');
-        }
-    }
-
-    $participants = [];
-    $seenEmails = [];
-    foreach ($participantNames as $index => $participantName) {
-        $pName = trim((string)$participantName);
-        $pEmail = trim((string)($participantEmails[$index] ?? ''));
-
-        if ($pName === '' && $pEmail === '') {
-            continue;
-        }
-        if ($pName === '' || $pEmail === '') {
-            $errors[] = 'Elke deelnemer moet een naam en e-mail hebben.';
-            continue;
-        }
-        if (!isValidEmail($pEmail)) {
-            $errors[] = 'Ongeldig e-mailadres voor deelnemer: ' . h($pName);
-            continue;
-        }
-        $emailKey = strtolower($pEmail);
-        if (isset($seenEmails[$emailKey])) {
-            $errors[] = 'Dubbel e-mailadres gevonden: ' . h($pEmail);
-            continue;
-        }
-        $seenEmails[$emailKey] = true;
-
-        $participants[] = ['name' => $pName, 'email' => $pEmail];
-    }
-
-    if (count($participants) < 2) {
-        $errors[] = 'Voeg minstens 2 deelnemers toe.';
-    }
-
-    if ($errors === []) {
-        $organizerToken = generateToken();
-        try {
-            $pdo->beginTransaction();
-
-            $stmt = $pdo->prepare(
-                'INSERT INTO events (token, name, event_type, event_date, draw_date, budget) VALUES (?, ?, ?, ?, ?, ?)'
-            );
-            $stmt->execute([
-                $organizerToken,
-                $name,
-                $eventType,
-                $eventDate,
-                $drawDate,
-                $budget,
-            ]);
-
-            $eventId = (int)$pdo->lastInsertId();
-            $participantStmt = $pdo->prepare(
-                'INSERT INTO participants (event_id, token, name, email) VALUES (?, ?, ?, ?)'
-            );
-
-            foreach ($participants as $participant) {
-                $participantStmt->execute([
-                    $eventId,
-                    generateToken(),
-                    $participant['name'],
-                    $participant['email'],
-                ]);
+            if (!in_array($eventType, ['birthday', 'secret_santa'], true)) {
+                $errors[] = 'Ongeldig evenementtype.';
+            }
+            if (!isValidDate($eventDate)) {
+                $errors[] = 'Datum evenement is ongeldig.';
             }
 
-            $pdo->commit();
-            header('Location: organizer.php?token=' . urlencode($organizerToken));
-            exit;
-        } catch (Throwable $e) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
+            if ($eventType === 'secret_santa') {
+                if (!isValidDate($drawDate)) {
+                    $errors[] = 'Koppel-datum is verplicht voor Secret Santa.';
+                } else {
+                    $drawDateObj = new DateTimeImmutable($drawDate);
+                    $eventDateObj = new DateTimeImmutable($eventDate);
+                    if ($drawDateObj > $eventDateObj) {
+                        $errors[] = 'Koppel-datum mag niet na de evenementdatum liggen.';
+                    }
+                }
+            } else {
+                $drawDate = null;
             }
-            $errors[] = 'Opslaan mislukt. Probeer opnieuw.';
+
+            $budget = null;
+            if ($budgetRaw !== '') {
+                if (!is_numeric($budgetRaw) || (float)$budgetRaw < 0) {
+                    $errors[] = 'Budget moet een niet-negatief getal zijn.';
+                } else {
+                    $budget = number_format((float)$budgetRaw, 2, '.', '');
+                }
+            }
+
+            $participants = [];
+            $seenEmails = [];
+            foreach ($participantNames as $index => $participantName) {
+                $pName = trim((string)$participantName);
+                $pEmail = trim((string)($participantEmails[$index] ?? ''));
+
+                if ($pName === '' && $pEmail === '') {
+                    continue;
+                }
+                if ($pName === '' || $pEmail === '') {
+                    $errors[] = 'Elke deelnemer moet een naam en e-mail hebben.';
+                    continue;
+                }
+                if (!isValidEmail($pEmail)) {
+                    $errors[] = 'Ongeldig e-mailadres voor deelnemer: ' . h($pName);
+                    continue;
+                }
+                $emailKey = strtolower($pEmail);
+                if (isset($seenEmails[$emailKey])) {
+                    $errors[] = 'Dubbel e-mailadres gevonden: ' . h($pEmail);
+                    continue;
+                }
+                $seenEmails[$emailKey] = true;
+
+                $participants[] = ['name' => $pName, 'email' => $pEmail];
+            }
+
+            if (count($participants) < 2) {
+                $errors[] = 'Voeg minstens 2 deelnemers toe.';
+            }
+
+            if ($errors === []) {
+                $organizerToken = generateToken();
+                try {
+                    $pdo->beginTransaction();
+
+                    $stmt = $pdo->prepare(
+                        'INSERT INTO events (token, name, event_type, event_date, draw_date, budget) VALUES (?, ?, ?, ?, ?, ?)'
+                    );
+                    $stmt->execute([
+                        $organizerToken,
+                        $name,
+                        $eventType,
+                        $eventDate,
+                        $drawDate,
+                        $budget,
+                    ]);
+
+                    $eventId = (int)$pdo->lastInsertId();
+                    $participantStmt = $pdo->prepare(
+                        'INSERT INTO participants (event_id, token, name, email) VALUES (?, ?, ?, ?)'
+                    );
+
+                    foreach ($participants as $participant) {
+                        $participantStmt->execute([
+                            $eventId,
+                            generateToken(),
+                            $participant['name'],
+                            $participant['email'],
+                        ]);
+                    }
+
+                    $pdo->commit();
+                    header('Location: organizer.php?token=' . urlencode($organizerToken));
+                    exit;
+                } catch (PDOException $e) {
+                    if ($pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
+                    if ($e->getCode() === '23000') {
+                        $errors[] = 'Dubbele deelnemer-e-mail gevonden. Gebruik unieke e-mailadressen per event.';
+                    } else {
+                        $errors[] = 'Opslaan mislukt. Probeer opnieuw.';
+                    }
+                } catch (Throwable $e) {
+                    if ($pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
+                    $errors[] = 'Opslaan mislukt. Probeer opnieuw.';
+                }
+            }
         }
     }
 }
