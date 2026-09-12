@@ -45,10 +45,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_reminder'])) {
             $reminderStmt = $pdo->prepare(
                 'SELECT p.token, p.name, p.email
                  FROM participants p
-                 LEFT JOIN gift_ideas g ON g.participant_id = p.id
                  WHERE p.event_id = ?
-                 GROUP BY p.id, p.token, p.name, p.email
-                 HAVING COUNT(g.id) = 0'
+                   AND NOT EXISTS (
+                       SELECT 1 FROM gift_ideas g WHERE g.participant_id = p.id
+                   )'
             );
             $reminderStmt->execute([(int)$event['id']]);
             $targets = $reminderStmt->fetchAll();
