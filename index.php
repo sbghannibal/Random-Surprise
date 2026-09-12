@@ -81,6 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $participants = [];
         $seenEmails = [];
+        $enteredParticipantRows = 0;
         foreach ($participantNames as $index => $participantName) {
             $pName = trim((string)$participantName);
             $pEmail = trim((string)($participantEmails[$index] ?? ''));
@@ -88,6 +89,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($pName === '' && $pEmail === '') {
                 continue;
             }
+
+            $enteredParticipantRows++;
 
             if ($pName === '') {
                 addFormError($errors, $fieldErrors, 'participant_name_' . $index, 'Naam van deelnemer ' . ($index + 1) . ' is verplicht.');
@@ -112,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        if (count($participants) < 2) {
+        if ($enteredParticipantRows < 2) {
             addFormError($errors, $fieldErrors, 'participants', 'Voeg minstens 2 deelnemers met naam en e-mailadres toe.');
         }
 
