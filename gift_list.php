@@ -218,15 +218,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     addFormError($errors, $fieldErrors, null, 'Kies een geldige vraag om te beantwoorden.');
                 } else {
                     try {
-                        $answerStmt = $pdo->prepare(
-                            'UPDATE anonymous_questions aq
+                        $canAnswerStmt = $pdo->prepare(
+                            'SELECT aq.id
+                             FROM anonymous_questions aq
                              JOIN gift_ideas g ON g.id = aq.gift_idea_id
-                             SET aq.answer = ?
                              WHERE aq.id = ? AND g.participant_id = ? AND aq.answer IS NULL'
                         );
-                        $answerStmt->execute([$answer, $activeQuestionId, $participantId]);
-                        if ($answerStmt->rowCount() > 0) {
-                            $shouldRedirect = true;
+                        $canAnswerStmt->execute([$activeQuestionId, $participantId]);
+                        if ($canAnswerStmt->fetchColumn()) {
+                            $answerStmt = $pdo->prepare('UPDATE anonymous_questions SET answer = ? WHERE id = ? AND answer IS NULL');
+                            $answerStmt->execute([$answer, $activeQuestionId]);
+                            if ($answerStmt->rowCount() > 0) {
+                                $shouldRedirect = true;
+                            } else {
+                                addFormError($errors, $fieldErrors, null, 'Deze vraag kan niet meer worden beantwoord.');
+                            }
                         } else {
                             addFormError($errors, $fieldErrors, null, 'Deze vraag kan niet meer worden beantwoord.');
                         }
