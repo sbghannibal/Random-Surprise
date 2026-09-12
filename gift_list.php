@@ -13,6 +13,7 @@ if ($token !== '') {
     $tokenCheckStmt->execute([$token]);
     if ($tokenCheckStmt->fetchColumn()) {
         session_regenerate_id(true);
+        unset($_SESSION['organizer_token']);
         $_SESSION['participant_token'] = $token;
         header('Location: gift_list.php');
         exit;

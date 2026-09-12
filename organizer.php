@@ -21,6 +21,7 @@ if ($token !== '') {
     $event = $findEventByToken($pdo, $token);
     if ($event) {
         session_regenerate_id(true);
+        unset($_SESSION['participant_token']);
         $_SESSION['organizer_token'] = $token;
         header('Location: organizer.php');
         exit;
