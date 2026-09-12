@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/env.php';
+
 function h(string $value): string
 {
     return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -26,6 +28,99 @@ function isValidEmail(string $email): bool
     return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
 }
 
+function isValidHttpsUrl(string $url): bool
+{
+    if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+        return false;
+    }
+
+    return (string)parse_url($url, PHP_URL_SCHEME) === 'https';
+}
+
+function addFormError(array &$errors, array &$fieldErrors, ?string $field, string $message): void
+{
+    $errors[] = $message;
+
+    if ($field === null) {
+        return;
+    }
+
+    $fieldErrors[$field] ??= [];
+    $fieldErrors[$field][] = $message;
+}
+
+function firstFieldError(array $fieldErrors, string $field): ?string
+{
+    if (!isset($fieldErrors[$field][0])) {
+        return null;
+    }
+
+    return (string)$fieldErrors[$field][0];
+}
+
+function fieldErrorClass(array $fieldErrors, string $field, string $baseClass = 'form-control'): string
+{
+    return firstFieldError($fieldErrors, $field) !== null ? $baseClass . ' is-invalid' : $baseClass;
+}
+
+function fieldErrorId(string $field): string
+{
+    return 'field-' . str_replace('%', '-', rawurlencode($field));
+}
+
+function renderErrorSummary(
+    array $errors,
+    array $fieldErrors = [],
+    string $title = 'Opslaan mislukt. Controleer de gemarkeerde velden.',
+    string $summaryId = 'form-error-summary'
+): void
+{
+    if ($errors === []) {
+        return;
+    }
+
+    $errorLinks = [];
+    foreach ($fieldErrors as $field => $messages) {
+        foreach ($messages as $message) {
+            if (!isset($errorLinks[$message])) {
+                $errorLinks[$message] = '#' . fieldErrorId((string)$field);
+            }
+        }
+    }
+
+    echo '<div class="alert alert-danger" role="alert" tabindex="-1" id="' . h($summaryId) . '">';
+    echo '<div class="fw-semibold mb-2">' . h($title) . '</div>';
+
+    $uniqueErrors = array_values(array_unique($errors));
+
+    if (count($uniqueErrors) === 1) {
+        $message = (string)$uniqueErrors[0];
+        if (isset($errorLinks[$message])) {
+            echo '<div><a class="alert-link" href="' . h($errorLinks[$message]) . '">' . h($message) . '</a></div>';
+        } else {
+            echo '<div>' . h($message) . '</div>';
+        }
+    } else {
+        echo '<ul class="mb-0 ps-3">';
+        foreach ($uniqueErrors as $error) {
+            $message = (string)$error;
+            if (isset($errorLinks[$message])) {
+                echo '<li><a class="alert-link" href="' . h($errorLinks[$message]) . '">' . h($message) . '</a></li>';
+            } else {
+                echo '<li>' . h($message) . '</li>';
+            }
+        }
+        echo '</ul>';
+    }
+
+    echo '</div>';
+}
+
+function logApplicationError(string $context, \Throwable $e): void
+{
+    error_log(sprintf('%s: [%s] %s', $context, get_class($e), $e->getMessage()));
+}
+
 function sendMailSafe(string $to, string $subject, string $message): bool
 {
     $to = str_replace(["\r", "\n"], '', $to);
@@ -42,7 +137,7 @@ function sendMailSafe(string $to, string $subject, string $message): bool
 
 function baseUrl(): string
 {
-    $configured = getenv('APP_BASE_URL');
+    $configured = env('APP_BASE_URL');
     if (!$configured) {
         throw new RuntimeException('APP_BASE_URL is not configured.');
     }

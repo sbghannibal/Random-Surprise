@@ -9,7 +9,8 @@ require __DIR__ . '/functions.php';
 
 $token = (string)($_GET['token'] ?? '');
 $message = null;
-$error = null;
+$errors = [];
+$fieldErrors = [];
 $findEventByToken = static function (PDO $pdo, string $eventToken): array|false {
     $stmt = $pdo->prepare('SELECT * FROM events WHERE token = ? LIMIT 1');
     $stmt->execute([$eventToken]);
@@ -39,7 +40,7 @@ if (!$event) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_reminder'])) {
     if (!isValidCsrfToken($_POST['csrf_token'] ?? null)) {
-        $error = 'Ongeldige aanvraag. Herlaad de pagina en probeer opnieuw.';
+        addFormError($errors, $fieldErrors, null, 'Ongeldige aanvraag. Herlaad de pagina en probeer opnieuw.');
     } else {
         try {
             $reminderStmt = $pdo->prepare(
@@ -64,7 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_reminder'])) {
 
             $message = "Herinneringen verstuurd: {$sent}";
         } catch (Throwable $e) {
-            $error = 'Herinneringen konden niet worden verzonden: controleer APP_BASE_URL.';
+            logApplicationError('Kon herinneringen niet verzenden', $e);
+            addFormError($errors, $fieldErrors, null, 'Herinneringen konden niet worden verzonden. Controleer de instellingen en probeer opnieuw.');
         }
     }
 }
@@ -106,7 +108,7 @@ $participants = $participantStmt->fetchAll();
                 Type: <?= h((string)$event['event_type']) ?> | Datum: <?= h((string)$event['event_date']) ?>
             </p>
 
-            <?php if ($error): ?><div class="alert alert-danger"><?= h($error) ?></div><?php endif; ?>
+            <?php renderErrorSummary($errors, [], 'Actie mislukt. Controleer onderstaande melding en probeer opnieuw.', 'organizer-error-summary'); ?>
             <?php if ($message): ?><div class="alert alert-success"><?= h($message) ?></div><?php endif; ?>
 
             <form method="post" class="mb-4">
