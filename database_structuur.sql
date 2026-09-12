@@ -23,7 +23,8 @@ CREATE TABLE IF NOT EXISTS `participants` (
     `matched_participant_id` INT NULL,
     FOREIGN KEY (`event_id`) REFERENCES `events`(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`matched_participant_id`) REFERENCES `participants`(`id`) ON DELETE SET NULL,
-    INDEX (`token`)
+    INDEX (`token`),
+    UNIQUE KEY `uniq_event_email` (`event_id`, `email`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS `gift_ideas` (

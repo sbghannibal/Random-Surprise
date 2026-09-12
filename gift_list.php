@@ -132,9 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $allowed = true;
                     }
                     if ($me['event_type'] === 'secret_santa' && $canSeeMatch) {
-                        $myTargetStmt = $pdo->prepare('SELECT matched_participant_id FROM participants WHERE id = ?');
-                        $myTargetStmt->execute([$participantId]);
-                        $targetId = (int)($myTargetStmt->fetchColumn() ?: 0);
+                        $targetId = (int)($me['matched_participant_id'] ?? 0);
                         $allowed = $targetId > 0 && $targetId === (int)$gift['participant_id'];
                     }
                 }
@@ -156,14 +154,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $questionId = (int)($_POST['question_id'] ?? 0);
             $answer = trim((string)($_POST['answer'] ?? ''));
             if ($answer !== '') {
-                $answerStmt = $pdo->prepare(
-                    'UPDATE anonymous_questions aq
+                $canAnswerStmt = $pdo->prepare(
+                    'SELECT aq.id
+                     FROM anonymous_questions aq
                      JOIN gift_ideas g ON g.id = aq.gift_idea_id
-                     SET aq.answer = ?
                      WHERE aq.id = ? AND g.participant_id = ? AND aq.answer IS NULL'
                 );
-                $answerStmt->execute([$answer, $questionId, $participantId]);
-                if ($answerStmt->rowCount() > 0) {
+                $canAnswerStmt->execute([$questionId, $participantId]);
+                if ($canAnswerStmt->fetchColumn()) {
+                    $answerStmt = $pdo->prepare('UPDATE anonymous_questions SET answer = ? WHERE id = ? AND answer IS NULL');
+                    $answerStmt->execute([$answer, $questionId]);
                     $shouldRedirect = true;
                 } else {
                     $errors[] = 'Dit antwoord kon niet worden opgeslagen.';
