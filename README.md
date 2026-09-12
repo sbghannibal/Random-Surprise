@@ -1,6 +1,22 @@
 # Random-Surprise
 Get a random person to gift
 
+## Configuratie via `.env`
+
+Maak een `.env`-bestand in de projectroot op basis van `.env.example`.
+
+Voorbeeld:
+
+```ini
+APP_BASE_URL=https://jouw-domein.example
+DB_HOST=127.0.0.1
+DB_NAME=evenementen_planner
+DB_USER=root
+DB_PASS=
+```
+
+`APP_BASE_URL` wordt gebruikt om absolute links op te bouwen, bijvoorbeeld voor herinneringsmails.
+
 ## Foutafhandeling en validatie
 
 POST-formulieren volgen hetzelfde patroon:

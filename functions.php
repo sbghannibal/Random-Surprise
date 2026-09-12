@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/env.php';
+
 function h(string $value): string
 {
     return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -135,7 +137,7 @@ function sendMailSafe(string $to, string $subject, string $message): bool
 
 function baseUrl(): string
 {
-    $configured = getenv('APP_BASE_URL');
+    $configured = env('APP_BASE_URL');
     if (!$configured) {
         throw new RuntimeException('APP_BASE_URL is not configured.');
     }
