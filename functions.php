@@ -53,3 +53,21 @@ function absoluteUrl(string $path): string
 {
     return baseUrl() . '/' . ltrim($path, '/');
 }
+
+function csrfToken(): string
+{
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+
+    return (string)$_SESSION['csrf_token'];
+}
+
+function isValidCsrfToken(?string $token): bool
+{
+    if ($token === null || $token === '' || empty($_SESSION['csrf_token'])) {
+        return false;
+    }
+
+    return hash_equals((string)$_SESSION['csrf_token'], $token);
+}

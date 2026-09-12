@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+session_start();
+
 require __DIR__ . '/db.php';
 require __DIR__ . '/functions.php';
 
@@ -32,91 +34,102 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string)($_POST['action'] ?? '');
     $shouldRedirect = false;
 
-    if ($action === 'add_gift') {
-        $description = trim((string)($_POST['description'] ?? ''));
-        $shopUrl = trim((string)($_POST['shop_url'] ?? ''));
+    if (!isValidCsrfToken($_POST['csrf_token'] ?? null)) {
+        $errors[] = 'Ongeldige aanvraag. Herlaad de pagina en probeer opnieuw.';
+    } else {
+        if ($action === 'add_gift') {
+            $description = trim((string)($_POST['description'] ?? ''));
+            $shopUrl = trim((string)($_POST['shop_url'] ?? ''));
 
-        if ($description === '') {
-            $errors[] = 'Omschrijving is verplicht.';
-        } else {
-            if ($shopUrl !== '' && filter_var($shopUrl, FILTER_VALIDATE_URL) === false) {
-                $errors[] = 'Webshop link is ongeldig.';
-            }
-            if ($errors === []) {
-                $insert = $pdo->prepare('INSERT INTO gift_ideas (participant_id, description, shop_url) VALUES (?, ?, ?)');
-                $insert->execute([$participantId, $description, $shopUrl !== '' ? $shopUrl : null]);
-                $shouldRedirect = true;
+            if ($description === '') {
+                $errors[] = 'Omschrijving is verplicht.';
+            } else {
+                if ($shopUrl !== '' && filter_var($shopUrl, FILTER_VALIDATE_URL) === false) {
+                    $errors[] = 'Webshop link is ongeldig.';
+                }
+                if ($errors === []) {
+                    $insert = $pdo->prepare('INSERT INTO gift_ideas (participant_id, description, shop_url) VALUES (?, ?, ?)');
+                    $insert->execute([$participantId, $description, $shopUrl !== '' ? $shopUrl : null]);
+                    $shouldRedirect = true;
+                }
             }
         }
-    }
 
-    if ($action === 'delete_gift') {
-        $giftId = (int)($_POST['gift_id'] ?? 0);
-        $delete = $pdo->prepare('DELETE FROM gift_ideas WHERE id = ? AND participant_id = ?');
-        $delete->execute([$giftId, $participantId]);
-        $shouldRedirect = true;
-    }
-
-    if ($action === 'toggle_reservation' && $me['event_type'] === 'birthday') {
-        $giftId = (int)($_POST['gift_id'] ?? 0);
-        $giftOwnerId = (int)($_POST['gift_owner_id'] ?? 0);
-        if ($giftOwnerId !== $participantId) {
-            $toggle = $pdo->prepare(
-                'UPDATE gift_ideas
-                 SET bought_by_participant_id = CASE WHEN bought_by_participant_id = ? THEN NULL ELSE ? END
-                 WHERE id = ? AND participant_id = ? AND (bought_by_participant_id IS NULL OR bought_by_participant_id = ?)'
-            );
-            $toggle->execute([$participantId, $participantId, $giftId, $giftOwnerId, $participantId]);
+        if ($action === 'delete_gift') {
+            $giftId = (int)($_POST['gift_id'] ?? 0);
+            $delete = $pdo->prepare('DELETE FROM gift_ideas WHERE id = ? AND participant_id = ?');
+            $delete->execute([$giftId, $participantId]);
             $shouldRedirect = true;
         }
-    }
 
-    if ($action === 'ask_question') {
-        $giftId = (int)($_POST['gift_id'] ?? 0);
-        $question = trim((string)($_POST['question'] ?? ''));
-        if ($question !== '') {
-            $allowed = false;
-            $giftCheck = $pdo->prepare(
+        if ($action === 'toggle_reservation' && $me['event_type'] === 'birthday') {
+            $giftId = (int)($_POST['gift_id'] ?? 0);
+            $giftOwnerStmt = $pdo->prepare(
                 'SELECT g.participant_id
                  FROM gift_ideas g
                  JOIN participants p ON p.id = g.participant_id
                  WHERE g.id = ? AND p.event_id = ?'
             );
-            $giftCheck->execute([$giftId, $eventId]);
-            $gift = $giftCheck->fetch();
-            if ($gift && (int)$gift['participant_id'] !== $participantId) {
-                if ($me['event_type'] === 'birthday') {
-                    $allowed = true;
-                }
-                if ($me['event_type'] === 'secret_santa' && $canSeeMatch) {
-                    $myTargetStmt = $pdo->prepare('SELECT matched_participant_id FROM participants WHERE id = ?');
-                    $myTargetStmt->execute([$participantId]);
-                    $targetId = (int)($myTargetStmt->fetchColumn() ?: 0);
-                    $allowed = $targetId > 0 && $targetId === (int)$gift['participant_id'];
-                }
-            }
-            if ($allowed) {
-                $insertQuestion = $pdo->prepare(
-                    'INSERT INTO anonymous_questions (gift_idea_id, asker_participant_id, question) VALUES (?, ?, ?)'
+            $giftOwnerStmt->execute([$giftId, $eventId]);
+            $giftOwnerId = (int)($giftOwnerStmt->fetchColumn() ?: 0);
+            if ($giftOwnerId > 0 && $giftOwnerId !== $participantId) {
+                $toggle = $pdo->prepare(
+                    'UPDATE gift_ideas
+                     SET bought_by_participant_id = CASE WHEN bought_by_participant_id = ? THEN NULL ELSE ? END
+                     WHERE id = ? AND participant_id = ? AND (bought_by_participant_id IS NULL OR bought_by_participant_id = ?)'
                 );
-                $insertQuestion->execute([$giftId, $participantId, $question]);
+                $toggle->execute([$participantId, $participantId, $giftId, $giftOwnerId, $participantId]);
                 $shouldRedirect = true;
             }
         }
-    }
 
-    if ($action === 'answer_question') {
-        $questionId = (int)($_POST['question_id'] ?? 0);
-        $answer = trim((string)($_POST['answer'] ?? ''));
-        if ($answer !== '') {
-            $answerStmt = $pdo->prepare(
-                'UPDATE anonymous_questions aq
-                 JOIN gift_ideas g ON g.id = aq.gift_idea_id
-                 SET aq.answer = ?
-                 WHERE aq.id = ? AND g.participant_id = ?'
-            );
-            $answerStmt->execute([$answer, $questionId, $participantId]);
-            $shouldRedirect = true;
+        if ($action === 'ask_question') {
+            $giftId = (int)($_POST['gift_id'] ?? 0);
+            $question = trim((string)($_POST['question'] ?? ''));
+            if ($question !== '') {
+                $allowed = false;
+                $giftCheck = $pdo->prepare(
+                    'SELECT g.participant_id
+                     FROM gift_ideas g
+                     JOIN participants p ON p.id = g.participant_id
+                     WHERE g.id = ? AND p.event_id = ?'
+                );
+                $giftCheck->execute([$giftId, $eventId]);
+                $gift = $giftCheck->fetch();
+                if ($gift && (int)$gift['participant_id'] !== $participantId) {
+                    if ($me['event_type'] === 'birthday') {
+                        $allowed = true;
+                    }
+                    if ($me['event_type'] === 'secret_santa' && $canSeeMatch) {
+                        $myTargetStmt = $pdo->prepare('SELECT matched_participant_id FROM participants WHERE id = ?');
+                        $myTargetStmt->execute([$participantId]);
+                        $targetId = (int)($myTargetStmt->fetchColumn() ?: 0);
+                        $allowed = $targetId > 0 && $targetId === (int)$gift['participant_id'];
+                    }
+                }
+                if ($allowed) {
+                    $insertQuestion = $pdo->prepare(
+                        'INSERT INTO anonymous_questions (gift_idea_id, asker_participant_id, question) VALUES (?, ?, ?)'
+                    );
+                    $insertQuestion->execute([$giftId, $participantId, $question]);
+                    $shouldRedirect = true;
+                }
+            }
+        }
+
+        if ($action === 'answer_question') {
+            $questionId = (int)($_POST['question_id'] ?? 0);
+            $answer = trim((string)($_POST['answer'] ?? ''));
+            if ($answer !== '') {
+                $answerStmt = $pdo->prepare(
+                    'UPDATE anonymous_questions aq
+                     JOIN gift_ideas g ON g.id = aq.gift_idea_id
+                     SET aq.answer = ?
+                     WHERE aq.id = ? AND g.participant_id = ?'
+                );
+                $answerStmt->execute([$answer, $questionId, $participantId]);
+                $shouldRedirect = true;
+            }
         }
     }
 
@@ -207,6 +220,7 @@ if ($me['event_type'] === 'secret_santa' && $canSeeMatch) {
                     <h2 class="h5">Mijn cadeau-ideeën</h2>
                     <form method="post" class="row g-2 mb-3">
                         <input type="hidden" name="action" value="add_gift">
+                        <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                         <div class="col-12"><input class="form-control" name="description" placeholder="Omschrijving" required></div>
                         <div class="col-12"><input class="form-control" name="shop_url" placeholder="Webshop link (optioneel)" type="url"></div>
                         <div class="col-12"><button class="btn btn-primary">Idee toevoegen</button></div>
@@ -224,6 +238,7 @@ if ($me['event_type'] === 'secret_santa' && $canSeeMatch) {
                             <?php endif; ?>
                             <form method="post" class="mt-2">
                                 <input type="hidden" name="action" value="delete_gift">
+                                <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                                 <input type="hidden" name="gift_id" value="<?= (int)$gift['id'] ?>">
                                 <button class="btn btn-sm btn-outline-danger">Verwijder</button>
                             </form>
@@ -247,6 +262,7 @@ if ($me['event_type'] === 'secret_santa' && $canSeeMatch) {
                             <?php else: ?>
                                 <form method="post" class="mt-2">
                                     <input type="hidden" name="action" value="answer_question">
+                                    <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                                     <input type="hidden" name="question_id" value="<?= (int)$question['id'] ?>">
                                     <input class="form-control mb-2" name="answer" placeholder="Typ je antwoord" required>
                                     <button class="btn btn-sm btn-accent">Antwoord opslaan</button>
@@ -282,14 +298,15 @@ if ($me['event_type'] === 'secret_santa' && $canSeeMatch) {
                                 <?php endif; ?>
                                 <form method="post" class="mt-2 d-inline">
                                     <input type="hidden" name="action" value="toggle_reservation">
+                                    <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                                     <input type="hidden" name="gift_id" value="<?= (int)$row['gift_id'] ?>">
-                                    <input type="hidden" name="gift_owner_id" value="<?= (int)$row['participant_id'] ?>">
                                     <button class="btn btn-sm <?= ((int)$row['bought_by_participant_id'] === $participantId) ? 'btn-success' : 'btn-outline-success' ?>">
                                         <?= ((int)$row['bought_by_participant_id'] === $participantId) ? 'Reservatie annuleren' : 'Ik koop dit' ?>
                                     </button>
                                 </form>
                                 <form method="post" class="mt-2">
                                     <input type="hidden" name="action" value="ask_question">
+                                    <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                                     <input type="hidden" name="gift_id" value="<?= (int)$row['gift_id'] ?>">
                                     <input class="form-control form-control-sm mb-1" name="question" placeholder="Stel anoniem een vraag" required>
                                     <button class="btn btn-sm btn-accent">Vraag verzenden</button>
@@ -314,6 +331,7 @@ if ($me['event_type'] === 'secret_santa' && $canSeeMatch) {
                                     <?php endif; ?>
                                     <form method="post" class="mt-2">
                                         <input type="hidden" name="action" value="ask_question">
+                                        <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                                         <input type="hidden" name="gift_id" value="<?= (int)$row['gift_id'] ?>">
                                         <input class="form-control form-control-sm mb-1" name="question" placeholder="Stel anoniem een vraag" required>
                                         <button class="btn btn-sm btn-accent">Vraag verzenden</button>

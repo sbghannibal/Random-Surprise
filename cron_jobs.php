@@ -45,6 +45,9 @@ $eventStmt = $pdo->prepare(
        AND e.draw_date <= ?
        AND EXISTS (
            SELECT 1 FROM participants p WHERE p.event_id = e.id AND p.matched_participant_id IS NULL
+       )
+       AND NOT EXISTS (
+           SELECT 1 FROM participants p2 WHERE p2.event_id = e.id AND p2.matched_participant_id IS NOT NULL
        )"
 );
 $eventStmt->execute([$today]);

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+session_start();
+
 require __DIR__ . '/db.php';
 require __DIR__ . '/functions.php';
 
@@ -19,27 +21,31 @@ if (!$event) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_reminder'])) {
-    $reminderStmt = $pdo->prepare(
-        'SELECT p.token, p.name, p.email
-         FROM participants p
-         LEFT JOIN gift_ideas g ON g.participant_id = p.id
-         WHERE p.event_id = ?
-         GROUP BY p.id
-         HAVING COUNT(g.id) = 0'
-    );
-    $reminderStmt->execute([(int)$event['id']]);
-    $targets = $reminderStmt->fetchAll();
+    if (!isValidCsrfToken($_POST['csrf_token'] ?? null)) {
+        $error = 'Ongeldige aanvraag. Herlaad de pagina en probeer opnieuw.';
+    } else {
+        $reminderStmt = $pdo->prepare(
+            'SELECT p.token, p.name, p.email
+             FROM participants p
+             LEFT JOIN gift_ideas g ON g.participant_id = p.id
+             WHERE p.event_id = ?
+             GROUP BY p.id
+             HAVING COUNT(g.id) = 0'
+        );
+        $reminderStmt->execute([(int)$event['id']]);
+        $targets = $reminderStmt->fetchAll();
 
-    $sent = 0;
-    foreach ($targets as $target) {
-        $link = absoluteUrl(sprintf('gift_list.php?token=%s', urlencode((string)$target['token'])));
-        $mailText = "Hoi {$target['name']},\n\nJe hebt nog geen cadeau-ideeën toegevoegd.\nVoeg je lijstje toe via: {$link}";
-        if (sendMailSafe((string)$target['email'], 'Herinnering: vul je cadeau-lijstje in', $mailText)) {
-            $sent++;
+        $sent = 0;
+        foreach ($targets as $target) {
+            $link = absoluteUrl(sprintf('gift_list.php?token=%s', urlencode((string)$target['token'])));
+            $mailText = "Hoi {$target['name']},\n\nJe hebt nog geen cadeau-ideeën toegevoegd.\nVoeg je lijstje toe via: {$link}";
+            if (sendMailSafe((string)$target['email'], 'Herinnering: vul je cadeau-lijstje in', $mailText)) {
+                $sent++;
+            }
         }
-    }
 
-    $message = "Herinneringen verstuurd: {$sent}";
+        $message = "Herinneringen verstuurd: {$sent}";
+    }
 }
 
 $participantStmt = $pdo->prepare(
@@ -83,6 +89,7 @@ $participants = $participantStmt->fetchAll();
             <?php if ($message): ?><div class="alert alert-success"><?= h($message) ?></div><?php endif; ?>
 
             <form method="post" class="mb-4">
+                <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                 <button name="send_reminder" value="1" class="btn btn-accent">Stuur herinnering naar deelnemers zonder ideeën</button>
             </form>
 
