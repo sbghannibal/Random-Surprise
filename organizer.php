@@ -17,6 +17,7 @@ if ($token !== '') {
     $stmt->execute([$token]);
     $event = $stmt->fetch();
     if ($event) {
+        session_regenerate_id(true);
         $_SESSION['organizer_event_id'] = (int)$event['id'];
         header('Location: organizer.php');
         exit;

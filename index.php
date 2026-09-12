@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $budget = null;
     if ($budgetRaw !== '') {
         if (!is_numeric($budgetRaw) || (float)$budgetRaw < 0) {
-            $errors[] = 'Budget moet een positief getal zijn.';
+            $errors[] = 'Budget moet een niet-negatief getal zijn.';
         } else {
             $budget = number_format((float)$budgetRaw, 2, '.', '');
         }

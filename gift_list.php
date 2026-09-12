@@ -126,7 +126,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     );
                     $insertQuestion->execute([$giftId, $participantId, $question]);
                     $shouldRedirect = true;
+                } else {
+                    $errors[] = 'Je mag geen vraag stellen voor dit cadeau.';
                 }
+            } else {
+                $errors[] = 'Vul een vraag in.';
             }
         }
 
