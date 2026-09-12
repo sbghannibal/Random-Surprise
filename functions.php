@@ -112,7 +112,7 @@ function renderErrorSummary(
     }
 
     echo '</div>';
-    echo '<script>window.addEventListener("DOMContentLoaded", function () { document.getElementById("' . h($summaryId) . '")?.focus(); });</script>';
+    echo '<script>window.addEventListener("DOMContentLoaded", function () { const summary = document.getElementById("' . h($summaryId) . '"); if (summary) { summary.scrollIntoView({ behavior: "smooth", block: "start" }); summary.focus(); } });</script>';
 }
 
 function logApplicationError(string $context, \Throwable $e): void
