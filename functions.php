@@ -43,10 +43,16 @@ function sendMailSafe(string $to, string $subject, string $message): bool
 function baseUrl(): string
 {
     $configured = getenv('APP_BASE_URL');
-    if ($configured) {
-        return rtrim($configured, '/');
+    if (!$configured) {
+        throw new RuntimeException('APP_BASE_URL is not configured.');
     }
-    return 'https://localhost';
+
+    $validated = filter_var($configured, FILTER_VALIDATE_URL);
+    if ($validated === false) {
+        throw new RuntimeException('APP_BASE_URL is invalid.');
+    }
+
+    return rtrim((string)$validated, '/');
 }
 
 function absoluteUrl(string $path): string

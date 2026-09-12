@@ -24,27 +24,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_reminder'])) {
     if (!isValidCsrfToken($_POST['csrf_token'] ?? null)) {
         $error = 'Ongeldige aanvraag. Herlaad de pagina en probeer opnieuw.';
     } else {
-        $reminderStmt = $pdo->prepare(
-            'SELECT p.token, p.name, p.email
-             FROM participants p
-             LEFT JOIN gift_ideas g ON g.participant_id = p.id
-             WHERE p.event_id = ?
-             GROUP BY p.id, p.token, p.name, p.email
-             HAVING COUNT(g.id) = 0'
-        );
-        $reminderStmt->execute([(int)$event['id']]);
-        $targets = $reminderStmt->fetchAll();
+        try {
+            $reminderStmt = $pdo->prepare(
+                'SELECT p.token, p.name, p.email
+                 FROM participants p
+                 LEFT JOIN gift_ideas g ON g.participant_id = p.id
+                 WHERE p.event_id = ?
+                 GROUP BY p.id, p.token, p.name, p.email
+                 HAVING COUNT(g.id) = 0'
+            );
+            $reminderStmt->execute([(int)$event['id']]);
+            $targets = $reminderStmt->fetchAll();
 
-        $sent = 0;
-        foreach ($targets as $target) {
-            $link = absoluteUrl(sprintf('gift_list.php?token=%s', urlencode((string)$target['token'])));
-            $mailText = "Hoi {$target['name']},\n\nJe hebt nog geen cadeau-ideeën toegevoegd.\nVoeg je lijstje toe via: {$link}";
-            if (sendMailSafe((string)$target['email'], 'Herinnering: vul je cadeau-lijstje in', $mailText)) {
-                $sent++;
+            $sent = 0;
+            foreach ($targets as $target) {
+                $link = absoluteUrl(sprintf('gift_list.php?token=%s', urlencode((string)$target['token'])));
+                $mailText = "Hoi {$target['name']},\n\nJe hebt nog geen cadeau-ideeën toegevoegd.\nVoeg je lijstje toe via: {$link}";
+                if (sendMailSafe((string)$target['email'], 'Herinnering: vul je cadeau-lijstje in', $mailText)) {
+                    $sent++;
+                }
             }
-        }
 
-        $message = "Herinneringen verstuurd: {$sent}";
+            $message = "Herinneringen verstuurd: {$sent}";
+        } catch (Throwable $e) {
+            $error = 'Herinneringen konden niet worden verzonden: controleer APP_BASE_URL.';
+        }
     }
 }
 

@@ -132,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'UPDATE anonymous_questions aq
                      JOIN gift_ideas g ON g.id = aq.gift_idea_id
                      SET aq.answer = ?
-                     WHERE aq.id = ? AND g.participant_id = ?'
+                     WHERE aq.id = ? AND g.participant_id = ? AND aq.answer IS NULL'
                 );
                 $answerStmt->execute([$answer, $questionId, $participantId]);
                 $shouldRedirect = true;
@@ -167,7 +167,7 @@ if ($me['event_type'] === 'birthday') {
     $othersStmt = $pdo->prepare(
         'SELECT p.id AS participant_id, p.name, g.id AS gift_id, g.description, g.shop_url, g.bought_by_participant_id
          FROM participants p
-         LEFT JOIN gift_ideas g ON g.participant_id = p.id
+         JOIN gift_ideas g ON g.participant_id = p.id
          WHERE p.event_id = ? AND p.id <> ?
          ORDER BY p.name, g.id'
     );

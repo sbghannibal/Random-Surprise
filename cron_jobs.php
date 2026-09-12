@@ -36,6 +36,14 @@ function createDerangement(array $ids): array
 }
 
 $today = (new DateTimeImmutable('today'))->format('Y-m-d');
+try {
+    baseUrl();
+} catch (Throwable $e) {
+    if (PHP_SAPI === 'cli') {
+        echo "APP_BASE_URL ontbreekt of is ongeldig.\n";
+    }
+    exit(1);
+}
 
 $eventStmt = $pdo->prepare(
     "SELECT e.id
