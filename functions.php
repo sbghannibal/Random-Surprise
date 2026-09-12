@@ -46,7 +46,7 @@ function baseUrl(): string
     if ($configured) {
         return rtrim($configured, '/');
     }
-    return 'http://localhost';
+    return 'https://localhost';
 }
 
 function absoluteUrl(string $path): string

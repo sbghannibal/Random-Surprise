@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+session_start();
+
 require __DIR__ . '/db.php';
 require __DIR__ . '/functions.php';
 
@@ -9,6 +11,10 @@ $errors = [];
 $successUrl = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isValidCsrfToken($_POST['csrf_token'] ?? null)) {
+        $errors[] = 'Ongeldige aanvraag. Herlaad de pagina en probeer opnieuw.';
+    }
+
     $name = trim((string)($_POST['name'] ?? ''));
     $eventType = (string)($_POST['event_type'] ?? 'birthday');
     $eventDate = (string)($_POST['event_date'] ?? '');
@@ -148,6 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endforeach; ?>
 
             <form method="post" novalidate>
+                <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">Naam evenement</label>

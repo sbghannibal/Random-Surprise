@@ -79,7 +79,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                      WHERE id = ? AND participant_id = ? AND (bought_by_participant_id IS NULL OR bought_by_participant_id = ?)'
                 );
                 $toggle->execute([$participantId, $participantId, $giftId, $giftOwnerId, $participantId]);
-                $shouldRedirect = true;
+                if ($toggle->rowCount() > 0) {
+                    $shouldRedirect = true;
+                } else {
+                    $errors[] = 'Deze reservatie is net gewijzigd door iemand anders. Vernieuw en probeer opnieuw.';
+                }
             }
         }
 
