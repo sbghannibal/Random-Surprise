@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_reminder'])) {
              FROM participants p
              LEFT JOIN gift_ideas g ON g.participant_id = p.id
              WHERE p.event_id = ?
-             GROUP BY p.id
+             GROUP BY p.id, p.token, p.name, p.email
              HAVING COUNT(g.id) = 0'
         );
         $reminderStmt->execute([(int)$event['id']]);
@@ -53,7 +53,7 @@ $participantStmt = $pdo->prepare(
      FROM participants p
      LEFT JOIN gift_ideas g ON g.participant_id = p.id
      WHERE p.event_id = ?
-     GROUP BY p.id
+     GROUP BY p.id, p.name, p.email
      ORDER BY p.name'
 );
 $participantStmt->execute([(int)$event['id']]);

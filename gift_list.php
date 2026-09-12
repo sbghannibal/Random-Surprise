@@ -27,7 +27,10 @@ if (!$me) {
 $eventId = (int)$me['event_id'];
 $participantId = (int)$me['id'];
 $today = (new DateTimeImmutable('today'))->format('Y-m-d');
-$canSeeMatch = $me['event_type'] === 'secret_santa' && $me['draw_date'] !== null && $me['draw_date'] <= $today;
+$canSeeMatch = $me['event_type'] === 'secret_santa'
+    && $me['draw_date'] !== null
+    && $me['draw_date'] <= $today
+    && $me['matched_participant_id'] !== null;
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -287,12 +290,12 @@ if ($me['event_type'] === 'secret_santa' && $canSeeMatch) {
                         <?php
                         $currentOwner = null;
                         foreach ($others as $row):
+                            if ($row['gift_id'] === null):
+                                continue;
+                            endif;
                             if ($currentOwner !== $row['participant_id']):
                                 $currentOwner = $row['participant_id'];
                                 echo '<hr><h3 class="h6 mb-2">' . h((string)$row['name']) . '</h3>';
-                            endif;
-                            if ($row['gift_id'] === null):
-                                continue;
                             endif;
                         ?>
                             <div class="border rounded p-3 mb-2">
