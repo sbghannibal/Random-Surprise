@@ -1,5 +1,5 @@
 # Random-Surprise
-Get A Random person to gift
+Get a random person to gift
 
 ## Foutafhandeling en validatie
 

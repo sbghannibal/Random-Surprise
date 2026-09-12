@@ -72,8 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $budget = null;
         if ($budgetRaw !== '') {
-            if (!is_numeric($budgetRaw) || (float)$budgetRaw <= 0) {
-                addFormError($errors, $fieldErrors, 'budget', 'Budget moet een geldig positief getal zijn.');
+            if (!is_numeric($budgetRaw) || (float)$budgetRaw < 0) {
+                addFormError($errors, $fieldErrors, 'budget', 'Budget moet een geldig getal van 0 of hoger zijn.');
             } else {
                 $budget = number_format((float)$budgetRaw, 2, '.', '');
             }
@@ -227,7 +227,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Budgetlimiet (optioneel)</label>
-                        <input class="<?= fieldErrorClass($fieldErrors, 'budget') ?>" type="number" min="0.01" step="0.01" name="budget" value="<?= h($old['budget']) ?>">
+                        <input class="<?= fieldErrorClass($fieldErrors, 'budget') ?>" type="number" min="0" step="0.01" name="budget" value="<?= h($old['budget']) ?>">
                         <?php if ($error = firstFieldError($fieldErrors, 'budget')): ?><div class="invalid-feedback"><?= h($error) ?></div><?php endif; ?>
                     </div>
                 </div>
