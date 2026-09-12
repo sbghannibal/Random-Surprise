@@ -61,28 +61,53 @@ function fieldErrorClass(array $fieldErrors, string $field, string $baseClass = 
     return firstFieldError($fieldErrors, $field) !== null ? $baseClass . ' is-invalid' : $baseClass;
 }
 
-function renderErrorSummary(array $errors, string $title = 'Opslaan mislukt. Controleer de gemarkeerde velden.'): void
+function fieldErrorId(string $field): string
+{
+    return 'field-' . preg_replace('/[^a-zA-Z0-9_-]+/', '-', $field);
+}
+
+function renderErrorSummary(array $errors, array $fieldErrors = [], string $title = 'Opslaan mislukt. Controleer de gemarkeerde velden.'): void
 {
     if ($errors === []) {
         return;
     }
 
-    echo '<div class="alert alert-danger" role="alert">';
+    $errorLinks = [];
+    foreach ($fieldErrors as $field => $messages) {
+        foreach ($messages as $message) {
+            if (!isset($errorLinks[$message])) {
+                $errorLinks[$message] = '#' . fieldErrorId((string)$field);
+            }
+        }
+    }
+
+    echo '<div class="alert alert-danger" role="alert" tabindex="-1" id="form-error-summary">';
     echo '<div class="fw-semibold mb-2">' . h($title) . '</div>';
 
     $uniqueErrors = array_values(array_unique($errors));
 
     if (count($uniqueErrors) === 1) {
-        echo '<div>' . h((string)$uniqueErrors[0]) . '</div>';
+        $message = (string)$uniqueErrors[0];
+        if (isset($errorLinks[$message])) {
+            echo '<div><a class="alert-link" href="' . h($errorLinks[$message]) . '">' . h($message) . '</a></div>';
+        } else {
+            echo '<div>' . h($message) . '</div>';
+        }
     } else {
         echo '<ul class="mb-0 ps-3">';
         foreach ($uniqueErrors as $error) {
-            echo '<li>' . h((string)$error) . '</li>';
+            $message = (string)$error;
+            if (isset($errorLinks[$message])) {
+                echo '<li><a class="alert-link" href="' . h($errorLinks[$message]) . '">' . h($message) . '</a></li>';
+            } else {
+                echo '<li>' . h($message) . '</li>';
+            }
         }
         echo '</ul>';
     }
 
     echo '</div>';
+    echo '<script>window.addEventListener("DOMContentLoaded", function () { document.getElementById("form-error-summary")?.focus(); });</script>';
 }
 
 function logApplicationError(string $context, \Throwable $e): void

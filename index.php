@@ -202,42 +202,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="card-body p-4">
             <h1 class="h4 mb-3">Maak een evenement aan</h1>
 
-            <?php renderErrorSummary($errors); ?>
+            <?php renderErrorSummary($errors, $fieldErrors); ?>
 
             <form method="post" novalidate>
                 <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label">Naam evenement</label>
-                        <input class="<?= fieldErrorClass($fieldErrors, 'name') ?>" name="name" required value="<?= h($old['name']) ?>">
+                        <label class="form-label" for="<?= h(fieldErrorId('name')) ?>">Naam evenement</label>
+                        <input class="<?= fieldErrorClass($fieldErrors, 'name') ?>" id="<?= h(fieldErrorId('name')) ?>" name="name" required value="<?= h($old['name']) ?>">
                         <?php if ($error = firstFieldError($fieldErrors, 'name')): ?><div class="invalid-feedback"><?= h($error) ?></div><?php endif; ?>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Type</label>
-                        <select class="<?= fieldErrorClass($fieldErrors, 'event_type', 'form-select') ?>" name="event_type" id="event_type">
+                        <label class="form-label" for="<?= h(fieldErrorId('event_type')) ?>">Type</label>
+                        <select class="<?= fieldErrorClass($fieldErrors, 'event_type', 'form-select') ?>" name="event_type" id="<?= h(fieldErrorId('event_type')) ?>">
                             <option value="birthday" <?= ($old['event_type'] === 'birthday') ? 'selected' : '' ?>>Verjaardag</option>
                             <option value="secret_santa" <?= ($old['event_type'] === 'secret_santa') ? 'selected' : '' ?>>Secret Santa</option>
                         </select>
                         <?php if ($error = firstFieldError($fieldErrors, 'event_type')): ?><div class="invalid-feedback"><?= h($error) ?></div><?php endif; ?>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Datum evenement</label>
-                        <input class="<?= fieldErrorClass($fieldErrors, 'event_date') ?>" type="date" name="event_date" required value="<?= h($old['event_date']) ?>">
+                        <label class="form-label" for="<?= h(fieldErrorId('event_date')) ?>">Datum evenement</label>
+                        <input class="<?= fieldErrorClass($fieldErrors, 'event_date') ?>" id="<?= h(fieldErrorId('event_date')) ?>" type="date" name="event_date" required value="<?= h($old['event_date']) ?>">
                         <?php if ($error = firstFieldError($fieldErrors, 'event_date')): ?><div class="invalid-feedback"><?= h($error) ?></div><?php endif; ?>
                     </div>
                     <div class="col-md-3" id="draw_date_wrap" style="display:none;">
-                        <label class="form-label">Koppel-datum</label>
-                        <input class="<?= fieldErrorClass($fieldErrors, 'draw_date') ?>" type="date" name="draw_date" value="<?= h($old['draw_date']) ?>">
+                        <label class="form-label" for="<?= h(fieldErrorId('draw_date')) ?>">Koppel-datum</label>
+                        <input class="<?= fieldErrorClass($fieldErrors, 'draw_date') ?>" id="<?= h(fieldErrorId('draw_date')) ?>" type="date" name="draw_date" value="<?= h($old['draw_date']) ?>">
                         <?php if ($error = firstFieldError($fieldErrors, 'draw_date')): ?><div class="invalid-feedback"><?= h($error) ?></div><?php endif; ?>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Budgetlimiet (optioneel)</label>
-                        <input class="<?= fieldErrorClass($fieldErrors, 'budget') ?>" type="number" min="0" step="0.01" name="budget" value="<?= h($old['budget']) ?>">
+                        <label class="form-label" for="<?= h(fieldErrorId('budget')) ?>">Budgetlimiet (optioneel)</label>
+                        <input class="<?= fieldErrorClass($fieldErrors, 'budget') ?>" id="<?= h(fieldErrorId('budget')) ?>" type="number" min="0" step="0.01" name="budget" value="<?= h($old['budget']) ?>">
                         <?php if ($error = firstFieldError($fieldErrors, 'budget')): ?><div class="invalid-feedback"><?= h($error) ?></div><?php endif; ?>
                     </div>
                 </div>
 
                 <hr class="my-4">
+                <div id="<?= h(fieldErrorId('participants')) ?>">
                 <h2 class="h5">Deelnemers</h2>
                 <div id="participants">
                     <?php
@@ -248,11 +249,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ?>
                         <div class="row g-2 mb-2 participant-row">
                             <div class="col-md-5">
-                                <input class="<?= fieldErrorClass($fieldErrors, 'participant_name_' . $i) ?>" name="participant_name[]" placeholder="Naam" value="<?= h((string)($oldNames[$i] ?? '')) ?>">
+                            <input class="<?= fieldErrorClass($fieldErrors, 'participant_name_' . $i) ?>" id="<?= h(fieldErrorId('participant_name_' . $i)) ?>" name="participant_name[]" placeholder="Naam" value="<?= h((string)($oldNames[$i] ?? '')) ?>">
                                 <?php if ($error = firstFieldError($fieldErrors, 'participant_name_' . $i)): ?><div class="invalid-feedback"><?= h($error) ?></div><?php endif; ?>
                             </div>
                             <div class="col-md-5">
-                                <input class="<?= fieldErrorClass($fieldErrors, 'participant_email_' . $i) ?>" type="email" name="participant_email[]" placeholder="E-mail" value="<?= h((string)($oldEmails[$i] ?? '')) ?>">
+                            <input class="<?= fieldErrorClass($fieldErrors, 'participant_email_' . $i) ?>" id="<?= h(fieldErrorId('participant_email_' . $i)) ?>" type="email" name="participant_email[]" placeholder="E-mail" value="<?= h((string)($oldEmails[$i] ?? '')) ?>">
                                 <?php if ($error = firstFieldError($fieldErrors, 'participant_email_' . $i)): ?><div class="invalid-feedback"><?= h($error) ?></div><?php endif; ?>
                             </div>
                             <div class="col-md-2"><button type="button" class="btn btn-outline-danger w-100 remove-participant">Verwijder</button></div>
@@ -260,6 +261,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php endfor; ?>
                 </div>
                 <?php if ($error = firstFieldError($fieldErrors, 'participants')): ?><div class="text-danger small mb-3"><?= h($error) ?></div><?php endif; ?>
+                </div>
                 <button type="button" class="btn btn-accent" id="add_participant">Voeg deelnemer toe</button>
 
                 <div class="mt-4">
@@ -270,7 +272,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </div>
 <script>
-    const eventTypeSelect = document.getElementById('event_type');
+    const eventTypeSelect = document.getElementById('<?= fieldErrorId('event_type') ?>');
     const drawDateWrap = document.getElementById('draw_date_wrap');
     const participants = document.getElementById('participants');
 

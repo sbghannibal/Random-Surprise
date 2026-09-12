@@ -102,6 +102,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     addFormError($errors, $fieldErrors, null, 'Kies een geldig cadeau-idee om te verwijderen.');
                 } else {
                     try {
+                        $ownedGiftStmt = $pdo->prepare('SELECT 1 FROM gift_ideas WHERE id = ? AND participant_id = ? LIMIT 1');
+                        $ownedGiftStmt->execute([$activeGiftId, $participantId]);
+                        if (!$ownedGiftStmt->fetchColumn()) {
+                            addFormError($errors, $fieldErrors, null, 'Dit cadeau-idee kon niet worden verwijderd.');
+                            break;
+                        }
+
                         $delete = $pdo->prepare('DELETE FROM gift_ideas WHERE id = ? AND participant_id = ?');
                         $delete->execute([$activeGiftId, $participantId]);
                         if ($delete->rowCount() > 0) {
@@ -324,7 +331,7 @@ if ($me['event_type'] === 'secret_santa' && $canSeeMatch) {
     <div class="container"><span class="navbar-brand">Cadeaulijst - <?= h((string)$me['event_name']) ?></span></div>
 </nav>
 <div class="container pb-5">
-    <?php renderErrorSummary($errors, 'Actie mislukt. Controleer de gemarkeerde velden.'); ?>
+    <?php renderErrorSummary($errors, $fieldErrors, 'Actie mislukt. Controleer de gemarkeerde velden.'); ?>
 
     <div class="row g-4">
         <div class="col-lg-6">
@@ -335,11 +342,11 @@ if ($me['event_type'] === 'secret_santa' && $canSeeMatch) {
                         <input type="hidden" name="action" value="add_gift">
                         <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                         <div class="col-12">
-                            <input class="<?= fieldErrorClass($fieldErrors, 'description') ?>" name="description" placeholder="Omschrijving" required value="<?= $activeAction === 'add_gift' ? h($oldInput['description']) : '' ?>">
+                            <input class="<?= fieldErrorClass($fieldErrors, 'description') ?>" id="<?= h(fieldErrorId('description')) ?>" name="description" placeholder="Omschrijving" required value="<?= $activeAction === 'add_gift' ? h($oldInput['description']) : '' ?>">
                             <?php if ($error = firstFieldError($fieldErrors, 'description')): ?><div class="invalid-feedback"><?= h($error) ?></div><?php endif; ?>
                         </div>
                         <div class="col-12">
-                            <input class="<?= fieldErrorClass($fieldErrors, 'shop_url') ?>" name="shop_url" placeholder="Webshop link (optioneel)" type="url" value="<?= $activeAction === 'add_gift' ? h($oldInput['shop_url']) : '' ?>">
+                            <input class="<?= fieldErrorClass($fieldErrors, 'shop_url') ?>" id="<?= h(fieldErrorId('shop_url')) ?>" name="shop_url" placeholder="Webshop link (optioneel)" type="url" value="<?= $activeAction === 'add_gift' ? h($oldInput['shop_url']) : '' ?>">
                             <?php if ($error = firstFieldError($fieldErrors, 'shop_url')): ?><div class="invalid-feedback"><?= h($error) ?></div><?php endif; ?>
                         </div>
                         <div class="col-12"><button class="btn btn-primary">Idee toevoegen</button></div>
@@ -383,7 +390,7 @@ if ($me['event_type'] === 'secret_santa' && $canSeeMatch) {
                                     <input type="hidden" name="action" value="answer_question">
                                     <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                                     <input type="hidden" name="question_id" value="<?= (int)$question['id'] ?>">
-                                    <input class="<?= fieldErrorClass($fieldErrors, 'answer_' . (int)$question['id']) ?> mb-2" name="answer" placeholder="Typ je antwoord" required value="<?= ($activeAction === 'answer_question' && $activeQuestionId === (int)$question['id']) ? h($oldInput['answer']) : '' ?>">
+                                    <input class="<?= fieldErrorClass($fieldErrors, 'answer_' . (int)$question['id']) ?> mb-2" id="<?= h(fieldErrorId('answer_' . (int)$question['id'])) ?>" name="answer" placeholder="Typ je antwoord" required value="<?= ($activeAction === 'answer_question' && $activeQuestionId === (int)$question['id']) ? h($oldInput['answer']) : '' ?>">
                                     <?php if ($error = firstFieldError($fieldErrors, 'answer_' . (int)$question['id'])): ?><div class="invalid-feedback d-block mb-2"><?= h($error) ?></div><?php endif; ?>
                                     <button class="btn btn-sm btn-accent">Antwoord opslaan</button>
                                 </form>
@@ -430,7 +437,7 @@ if ($me['event_type'] === 'secret_santa' && $canSeeMatch) {
                                     <input type="hidden" name="action" value="ask_question">
                                     <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                                     <input type="hidden" name="gift_id" value="<?= (int)$row['gift_id'] ?>">
-                                    <input class="<?= fieldErrorClass($fieldErrors, 'question_' . (int)$row['gift_id'], 'form-control form-control-sm') ?> mb-1" name="question" placeholder="Stel anoniem een vraag" required value="<?= ($activeAction === 'ask_question' && $activeGiftId === (int)$row['gift_id']) ? h($oldInput['question']) : '' ?>">
+                                    <input class="<?= fieldErrorClass($fieldErrors, 'question_' . (int)$row['gift_id'], 'form-control form-control-sm') ?> mb-1" id="<?= h(fieldErrorId('question_' . (int)$row['gift_id'])) ?>" name="question" placeholder="Stel anoniem een vraag" required value="<?= ($activeAction === 'ask_question' && $activeGiftId === (int)$row['gift_id']) ? h($oldInput['question']) : '' ?>">
                                     <?php if ($error = firstFieldError($fieldErrors, 'question_' . (int)$row['gift_id'])): ?><div class="invalid-feedback d-block mb-1"><?= h($error) ?></div><?php endif; ?>
                                     <button class="btn btn-sm btn-accent">Vraag verzenden</button>
                                 </form>
@@ -456,7 +463,7 @@ if ($me['event_type'] === 'secret_santa' && $canSeeMatch) {
                                         <input type="hidden" name="action" value="ask_question">
                                         <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                                         <input type="hidden" name="gift_id" value="<?= (int)$row['gift_id'] ?>">
-                                        <input class="<?= fieldErrorClass($fieldErrors, 'question_' . (int)$row['gift_id'], 'form-control form-control-sm') ?> mb-1" name="question" placeholder="Stel anoniem een vraag" required value="<?= ($activeAction === 'ask_question' && $activeGiftId === (int)$row['gift_id']) ? h($oldInput['question']) : '' ?>">
+                                        <input class="<?= fieldErrorClass($fieldErrors, 'question_' . (int)$row['gift_id'], 'form-control form-control-sm') ?> mb-1" id="<?= h(fieldErrorId('question_' . (int)$row['gift_id'])) ?>" name="question" placeholder="Stel anoniem een vraag" required value="<?= ($activeAction === 'ask_question' && $activeGiftId === (int)$row['gift_id']) ? h($oldInput['question']) : '' ?>">
                                         <?php if ($error = firstFieldError($fieldErrors, 'question_' . (int)$row['gift_id'])): ?><div class="invalid-feedback d-block mb-1"><?= h($error) ?></div><?php endif; ?>
                                         <button class="btn btn-sm btn-accent">Vraag verzenden</button>
                                     </form>
