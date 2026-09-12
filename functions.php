@@ -66,7 +66,12 @@ function fieldErrorId(string $field): string
     return 'field-' . preg_replace('/[^a-zA-Z0-9_-]+/', '-', $field);
 }
 
-function renderErrorSummary(array $errors, array $fieldErrors = [], string $title = 'Opslaan mislukt. Controleer de gemarkeerde velden.'): void
+function renderErrorSummary(
+    array $errors,
+    array $fieldErrors = [],
+    string $title = 'Opslaan mislukt. Controleer de gemarkeerde velden.',
+    string $summaryId = 'form-error-summary'
+): void
 {
     if ($errors === []) {
         return;
@@ -81,7 +86,7 @@ function renderErrorSummary(array $errors, array $fieldErrors = [], string $titl
         }
     }
 
-    echo '<div class="alert alert-danger" role="alert" tabindex="-1" id="form-error-summary">';
+    echo '<div class="alert alert-danger" role="alert" tabindex="-1" id="' . h($summaryId) . '">';
     echo '<div class="fw-semibold mb-2">' . h($title) . '</div>';
 
     $uniqueErrors = array_values(array_unique($errors));
@@ -107,7 +112,7 @@ function renderErrorSummary(array $errors, array $fieldErrors = [], string $titl
     }
 
     echo '</div>';
-    echo '<script>window.addEventListener("DOMContentLoaded", function () { document.getElementById("form-error-summary")?.focus(); });</script>';
+    echo '<script>window.addEventListener("DOMContentLoaded", function () { document.getElementById("' . h($summaryId) . '")?.focus(); });</script>';
 }
 
 function logApplicationError(string $context, \Throwable $e): void

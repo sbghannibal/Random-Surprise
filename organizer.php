@@ -108,7 +108,7 @@ $participants = $participantStmt->fetchAll();
                 Type: <?= h((string)$event['event_type']) ?> | Datum: <?= h((string)$event['event_date']) ?>
             </p>
 
-            <?php renderErrorSummary($errors, [], 'Actie mislukt. Controleer onderstaande melding en probeer opnieuw.'); ?>
+            <?php renderErrorSummary($errors, [], 'Actie mislukt. Controleer onderstaande melding en probeer opnieuw.', 'organizer-error-summary'); ?>
             <?php if ($message): ?><div class="alert alert-success"><?= h($message) ?></div><?php endif; ?>
 
             <form method="post" class="mb-4">

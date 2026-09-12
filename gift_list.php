@@ -331,7 +331,7 @@ if ($me['event_type'] === 'secret_santa' && $canSeeMatch) {
     <div class="container"><span class="navbar-brand">Cadeaulijst - <?= h((string)$me['event_name']) ?></span></div>
 </nav>
 <div class="container pb-5">
-    <?php renderErrorSummary($errors, $fieldErrors, 'Actie mislukt. Controleer de gemarkeerde velden.'); ?>
+    <?php renderErrorSummary($errors, $fieldErrors, 'Actie mislukt. Controleer de gemarkeerde velden.', 'gift-list-error-summary'); ?>
 
     <div class="row g-4">
         <div class="col-lg-6">
