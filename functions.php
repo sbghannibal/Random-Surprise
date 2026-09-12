@@ -26,6 +26,70 @@ function isValidEmail(string $email): bool
     return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
 }
 
+function isValidHttpsUrl(string $url): bool
+{
+    if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+        return false;
+    }
+
+    return (string)parse_url($url, PHP_URL_SCHEME) === 'https';
+}
+
+function addFormError(array &$errors, array &$fieldErrors, ?string $field, string $message): void
+{
+    $errors[] = $message;
+
+    if ($field === null) {
+        return;
+    }
+
+    $fieldErrors[$field] ??= [];
+    $fieldErrors[$field][] = $message;
+}
+
+function firstFieldError(array $fieldErrors, string $field): ?string
+{
+    if (!isset($fieldErrors[$field][0])) {
+        return null;
+    }
+
+    return (string)$fieldErrors[$field][0];
+}
+
+function fieldErrorClass(array $fieldErrors, string $field, string $baseClass = 'form-control'): string
+{
+    return firstFieldError($fieldErrors, $field) !== null ? $baseClass . ' is-invalid' : $baseClass;
+}
+
+function renderErrorSummary(array $errors, string $title = 'Opslaan mislukt. Controleer de gemarkeerde velden.'): void
+{
+    if ($errors === []) {
+        return;
+    }
+
+    echo '<div class="alert alert-danger" role="alert">';
+    echo '<div class="fw-semibold mb-2">' . h($title) . '</div>';
+
+    $uniqueErrors = array_values(array_unique($errors));
+
+    if (count($uniqueErrors) === 1) {
+        echo '<div>' . h((string)$uniqueErrors[0]) . '</div>';
+    } else {
+        echo '<ul class="mb-0 ps-3">';
+        foreach ($uniqueErrors as $error) {
+            echo '<li>' . h((string)$error) . '</li>';
+        }
+        echo '</ul>';
+    }
+
+    echo '</div>';
+}
+
+function logApplicationError(string $context, Throwable $e): void
+{
+    error_log(sprintf('%s: [%s] %s', $context, get_class($e), $e->getMessage()));
+}
+
 function sendMailSafe(string $to, string $subject, string $message): bool
 {
     $to = str_replace(["\r", "\n"], '', $to);
