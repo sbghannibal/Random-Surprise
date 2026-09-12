@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_reminder'])) {
 
     $sent = 0;
     foreach ($targets as $target) {
-        $link = sprintf('gift_list.php?token=%s', urlencode((string)$target['token']));
+        $link = absoluteUrl(sprintf('gift_list.php?token=%s', urlencode((string)$target['token'])));
         $mailText = "Hoi {$target['name']},\n\nJe hebt nog geen cadeau-ideeën toegevoegd.\nVoeg je lijstje toe via: {$link}";
         if (sendMailSafe((string)$target['email'], 'Herinnering: vul je cadeau-lijstje in', $mailText)) {
             $sent++;

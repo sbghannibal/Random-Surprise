@@ -70,8 +70,11 @@ foreach ($eventsToDraw as $event) {
         $pdo->beginTransaction();
 
         $updateStmt = $pdo->prepare('UPDATE participants SET matched_participant_id = ? WHERE id = ?');
+        $assignmentMap = [];
         foreach ($participantIds as $i => $giverId) {
-            $updateStmt->execute([$drawnIds[$i], $giverId]);
+            $receiverId = $drawnIds[$i];
+            $updateStmt->execute([$receiverId, $giverId]);
+            $assignmentMap[$giverId] = $receiverId;
         }
 
         $nameLookup = [];
@@ -81,9 +84,9 @@ foreach ($eventsToDraw as $event) {
 
         foreach ($participants as $participant) {
             $giverId = (int)$participant['id'];
-            $receiverId = $drawnIds[array_search($giverId, $participantIds, true)];
+            $receiverId = $assignmentMap[$giverId] ?? 0;
             $receiverName = $nameLookup[$receiverId] ?? 'onbekend';
-            $link = sprintf('gift_list.php?token=%s', urlencode((string)$participant['token']));
+            $link = absoluteUrl(sprintf('gift_list.php?token=%s', urlencode((string)$participant['token'])));
 
             $body = "Hoi {$participant['name']},\n\nVoor event '{$event['name']}' heb jij getrokken: {$receiverName}.\nBekijk het lijstje via: {$link}";
             sendMailSafe((string)$participant['email'], 'Secret Santa trekking uitgevoerd', $body);

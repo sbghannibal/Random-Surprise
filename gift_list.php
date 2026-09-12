@@ -61,9 +61,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $toggle = $pdo->prepare(
                 'UPDATE gift_ideas
                  SET bought_by_participant_id = CASE WHEN bought_by_participant_id = ? THEN NULL ELSE ? END
-                 WHERE id = ? AND participant_id = ?'
+                 WHERE id = ? AND participant_id = ? AND (bought_by_participant_id IS NULL OR bought_by_participant_id = ?)'
             );
-            $toggle->execute([$participantId, $participantId, $giftId, $giftOwnerId]);
+            $toggle->execute([$participantId, $participantId, $giftId, $giftOwnerId, $participantId]);
         }
     }
 

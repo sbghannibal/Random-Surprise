@@ -28,6 +28,9 @@ function isValidEmail(string $email): bool
 
 function sendMailSafe(string $to, string $subject, string $message): bool
 {
+    $to = str_replace(["\r", "\n"], '', $to);
+    $subject = str_replace(["\r", "\n"], ' ', $subject);
+
     $headers = [
         'MIME-Version: 1.0',
         'Content-type: text/plain; charset=UTF-8',
@@ -35,4 +38,24 @@ function sendMailSafe(string $to, string $subject, string $message): bool
     ];
 
     return mail($to, $subject, $message, implode("\r\n", $headers));
+}
+
+function baseUrl(): string
+{
+    $configured = getenv('APP_BASE_URL');
+    if ($configured) {
+        return rtrim($configured, '/');
+    }
+
+    if (!empty($_SERVER['HTTP_HOST'])) {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        return $scheme . '://' . $_SERVER['HTTP_HOST'];
+    }
+
+    return 'http://localhost';
+}
+
+function absoluteUrl(string $path): string
+{
+    return baseUrl() . '/' . ltrim($path, '/');
 }
