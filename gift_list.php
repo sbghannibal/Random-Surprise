@@ -87,6 +87,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $errors[] = 'Deze reservatie is net gewijzigd door iemand anders. Vernieuw en probeer opnieuw.';
                 }
+            } elseif ($giftOwnerId === $participantId) {
+                $errors[] = 'Je kunt je eigen cadeau-idee niet reserveren.';
+            } else {
+                $errors[] = 'Dit cadeau kan niet worden gereserveerd.';
             }
         }
 
@@ -135,7 +139,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                      WHERE aq.id = ? AND g.participant_id = ? AND aq.answer IS NULL'
                 );
                 $answerStmt->execute([$answer, $questionId, $participantId]);
-                $shouldRedirect = true;
+                if ($answerStmt->rowCount() > 0) {
+                    $shouldRedirect = true;
+                } else {
+                    $errors[] = 'Dit antwoord kon niet worden opgeslagen.';
+                }
             }
         }
     }

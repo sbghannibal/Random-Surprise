@@ -50,7 +50,10 @@ $eventStmt = $pdo->prepare(
      FROM events e
      WHERE e.event_type = 'secret_santa'
        AND e.draw_date IS NOT NULL
-       AND e.draw_date <= ?"
+       AND e.draw_date <= ?
+       AND EXISTS (
+           SELECT 1 FROM participants p WHERE p.event_id = e.id AND p.matched_participant_id IS NULL
+       )"
 );
 $eventStmt->execute([$today]);
 $eventIds = array_map(static fn(array $row): int => (int)$row['id'], $eventStmt->fetchAll());
